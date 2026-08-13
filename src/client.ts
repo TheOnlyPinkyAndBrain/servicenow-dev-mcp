@@ -1,4 +1,5 @@
 import type { ServiceNowConfig, QueryParams, PaginatedResult, BackgroundScriptResult } from "./types.js";
+import { createAuthProvider, type AuthProvider } from "./auth.js";
 
 export class ServiceNowApiError extends Error {
   constructor(
@@ -15,22 +16,23 @@ export class ServiceNowApiError extends Error {
 export class ServiceNowClient {
   private instanceUrl: string;
   private baseUrl: string;
-  private authHeader: string;
-  private username: string;
-  private password: string;
+  private authProvider: AuthProvider;
 
-  // Session state for background script execution
+  // The background-script tool has no REST equivalent — ServiceNow only
+  // exposes it via the sys.scripts.do UI page, which needs a real form
+  // login and session cookies. These fall back to SERVICENOW_USERNAME/
+  // PASSWORD even when the primary authMethod is bearer/oauth.
+  private readonly backgroundScriptUsername?: string;
+  private readonly backgroundScriptPassword?: string;
   private sessionCookies: string | null = null;
   private csrfToken: string | null = null;
 
   constructor(config: ServiceNowConfig) {
     this.instanceUrl = config.instanceUrl;
     this.baseUrl = `${config.instanceUrl}/api/now/table`;
-    this.username = config.username;
-    this.password = config.password;
-    this.authHeader =
-      "Basic " +
-      Buffer.from(`${config.username}:${config.password}`).toString("base64");
+    this.authProvider = createAuthProvider(config);
+    this.backgroundScriptUsername = config.username;
+    this.backgroundScriptPassword = config.password;
   }
 
   private buildUrl(tableName: string, sysId?: string): string {
@@ -56,10 +58,11 @@ export class ServiceNowClient {
   private async request<T>(
     method: string,
     url: string,
-    body?: Record<string, unknown>
+    body?: Record<string, unknown>,
+    isRetry = false
   ): Promise<{ data: T; totalCount?: number }> {
     const headers: Record<string, string> = {
-      Authorization: this.authHeader,
+      Authorization: await this.authProvider.getAuthHeader(),
       Accept: "application/json",
       "Content-Type": "application/json",
     };
@@ -69,6 +72,13 @@ export class ServiceNowClient {
       headers,
       body: body ? JSON.stringify(body) : undefined,
     });
+
+    if (response.status === 401 && !isRetry) {
+      // Token may have expired between our cached-expiry check and the
+      // request landing — refresh once and retry before giving up.
+      await this.authProvider.onUnauthorized();
+      return this.request<T>(method, url, body, true);
+    }
 
     if (!response.ok) {
       let detail: string;
@@ -192,10 +202,18 @@ export class ServiceNowClient {
   private async ensureSession(): Promise<void> {
     if (this.sessionCookies && this.csrfToken) return;
 
+    if (!this.backgroundScriptUsername || !this.backgroundScriptPassword) {
+      throw new Error(
+        "Background script execution requires SERVICENOW_USERNAME and SERVICENOW_PASSWORD to be set. " +
+          "This tool logs in via ServiceNow's UI form (sys.scripts.do) — there is no REST/OAuth/bearer-token " +
+          "equivalent, so a real username/password is needed even when SERVICENOW_AUTH_METHOD is bearer or oauth."
+      );
+    }
+
     // Login via form POST to get an authenticated session
     const loginForm = new URLSearchParams();
-    loginForm.set("user_name", this.username);
-    loginForm.set("user_password", this.password);
+    loginForm.set("user_name", this.backgroundScriptUsername);
+    loginForm.set("user_password", this.backgroundScriptPassword);
     loginForm.set("sys_action", "sysverb_login");
 
     const loginResp = await fetch(`${this.instanceUrl}/login.do`, {

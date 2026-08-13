@@ -3,11 +3,30 @@ import type { ServiceNowClient } from "./client.js";
 
 export type Mode = "debug" | "develop";
 
+export type AuthMethod = "basic" | "bearer" | "oauth";
+
+export type OAuthGrantType = "password" | "client_credentials";
+
 export interface ServiceNowConfig {
   instanceUrl: string;
-  username: string;
-  password: string;
   mode: Mode;
+  authMethod: AuthMethod;
+
+  // Basic auth — also used as the fallback session login for the
+  // background-script tool, which has no REST equivalent and always
+  // requires a real username/password form login regardless of authMethod.
+  username?: string;
+  password?: string;
+
+  // Bearer token auth (static token, caller manages rotation)
+  accessToken?: string;
+
+  // OAuth (ServiceNow's own /oauth_token.do token endpoint)
+  oauthClientId?: string;
+  oauthClientSecret?: string;
+  oauthGrantType?: OAuthGrantType;
+  oauthUsername?: string;
+  oauthPassword?: string;
 }
 
 export interface QueryParams {

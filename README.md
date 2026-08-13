@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A comprehensive MCP (Model Context Protocol) server that gives AI assistants expert-level access to any ServiceNow module. **299 tools across 44 modules.** Connects to a ServiceNow instance via Basic Auth and provides tools for debugging, inspecting configuration, and building features across the entire platform.
+A comprehensive MCP (Model Context Protocol) server that gives AI assistants expert-level access to any ServiceNow module. **299 tools across 44 modules.** Connects to a ServiceNow instance via Basic Auth, OAuth, or a bearer token and provides tools for debugging, inspecting configuration, and building features across the entire platform.
 
 ## Capabilities
 
@@ -124,6 +124,20 @@ SERVICENOW_USERNAME=admin
 SERVICENOW_PASSWORD=your-password
 SERVICENOW_MODE=debug
 ```
+
+## Authentication
+
+Set `SERVICENOW_AUTH_METHOD` to choose how the server authenticates. See `.env.example` for the full set of variables per method.
+
+| Method | Env var | Notes |
+|---|---|---|
+| `basic` (default) | `SERVICENOW_USERNAME` / `SERVICENOW_PASSWORD` | Simplest option. |
+| `bearer` | `SERVICENOW_ACCESS_TOKEN` | Static token you fetch/rotate yourself. |
+| `oauth` | `SERVICENOW_OAUTH_CLIENT_ID` / `SERVICENOW_OAUTH_CLIENT_SECRET` (+ `SERVICENOW_OAUTH_USERNAME`/`PASSWORD` for the default `password` grant) | Uses ServiceNow's own `/oauth_token.do` endpoint. Tokens are cached and refreshed automatically, with a one-shot re-auth retry on 401. Requires an OAuth application registered on the instance under System OAuth > Application Registry. |
+
+**Background-script tool:** regardless of `SERVICENOW_AUTH_METHOD`, keep `SERVICENOW_USERNAME`/`SERVICENOW_PASSWORD` set if you want the background-script execution tool to work. It logs in through ServiceNow's UI (`sys.scripts.do`) rather than a REST endpoint, so it always needs a real username/password session — there's no OAuth or bearer-token equivalent for it.
+
+**Company/Microsoft SSO:** this server runs headless, so it can't complete an interactive Azure AD login. If your instance enforces SSO for all users, either use a ServiceNow integration account excluded from SSO enforcement with the `oauth` method, or — if your instance's Multi-Provider SSO is configured to accept externally-issued Azure AD tokens for API auth — obtain that token yourself (e.g. via an MSAL client-credentials flow) and supply it through `SERVICENOW_AUTH_METHOD=bearer`.
 
 ## Running
 
