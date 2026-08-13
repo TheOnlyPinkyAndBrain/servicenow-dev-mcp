@@ -1,6 +1,11 @@
 import type { ServiceNowConfig, QueryParams, PaginatedResult, BackgroundScriptResult } from "./types.js";
 import { createAuthProvider, type AuthProvider } from "./auth.js";
 
+// Printed by the elevation prelude when the background-script account
+// doesn't already hold security_admin — enableElevatedRole() can only
+// activate a role the account already has, never grant a new one.
+export const ELEVATION_FAILED_MARKER = "__ELEVATION_FAILED__";
+
 export class ServiceNowApiError extends Error {
   constructor(
     public statusCode: number,
@@ -250,14 +255,40 @@ export class ServiceNowClient {
     this.csrfToken = ckMatch[1];
   }
 
+  // Uses GlideSecurityManager.enableElevatedRole() — an undocumented,
+  // unsupported ServiceNow internal API (no official REST/scripted
+  // equivalent exists for the "Elevate Roles" UI action). It only
+  // *activates* a role the session's user already holds; it cannot
+  // grant security_admin to an account that doesn't have it, and it
+  // never impersonates another user to get around that. If the
+  // background-script account lacks the role, we fail loudly via the
+  // marker below rather than silently running unelevated.
+  private wrapWithElevation(script: string): string {
+    return [
+      "if (!gs.hasRole('security_admin')) {",
+      `  gs.print('${ELEVATION_FAILED_MARKER} the background-script account does not have the security_admin role assigned. GlideSecurityManager.enableElevatedRole() can only activate a role the account already holds -- assign security_admin to this account directly, it cannot be granted programmatically.');`,
+      "} else {",
+      "  GlideSecurityManager.get().enableElevatedRole('security_admin');",
+      "  (function() {",
+      script,
+      "  })();",
+      "}",
+    ].join("\n");
+  }
+
   async executeBackgroundScript(
     script: string,
-    scope: string = "global"
+    scope: string = "global",
+    elevateSecurityAdmin = false
   ): Promise<BackgroundScriptResult> {
     await this.ensureSession();
 
+    const effectiveScript = elevateSecurityAdmin
+      ? this.wrapWithElevation(script)
+      : script;
+
     const formData = new URLSearchParams();
-    formData.set("script", script);
+    formData.set("script", effectiveScript);
     formData.set("runscript", "Run script");
     formData.set("sys_scope", scope);
     formData.set("quota_managed_transaction", "on");

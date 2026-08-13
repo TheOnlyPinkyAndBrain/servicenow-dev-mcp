@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import type { ServiceNowClient } from "../client.js";
+import { ELEVATION_FAILED_MARKER, type ServiceNowClient } from "../client.js";
 import type { Mode } from "../types.js";
 import { errorResult, jsonResult, textResult } from "../utils.js";
 
@@ -25,10 +25,26 @@ export function registerExecuteTools(
         .string()
         .optional()
         .describe("Application scope to run the script in (default 'global')"),
+      elevate_security_admin: z
+        .boolean()
+        .optional()
+        .describe(
+          "Activate the security_admin role for this script's session before running it, via " +
+          "the undocumented GlideSecurityManager.enableElevatedRole() API — the same effect as " +
+          "the 'Elevate Roles' UI action, but scripted. Only works if the SERVICENOW_USERNAME " +
+          "account already has security_admin assigned directly; it cannot grant the role, only " +
+          "activate one already held. Does not affect the create/update tools elsewhere in this " +
+          "server (schema, script, workflow, update-set) — those are separate REST calls with no " +
+          "session to elevate. Default false."
+        ),
     },
-    async ({ script, scope }) => {
+    async ({ script, scope, elevate_security_admin }) => {
       try {
-        const result = await client.executeBackgroundScript(script, scope ?? "global");
+        const result = await client.executeBackgroundScript(
+          script,
+          scope ?? "global",
+          elevate_security_admin ?? false
+        );
 
         if (!result.success) {
           return errorResult(new Error(result.error ?? "Script execution failed"));
@@ -36,6 +52,10 @@ export function registerExecuteTools(
 
         if (!result.output) {
           return textResult("Script executed successfully (no output).");
+        }
+
+        if (result.output.includes(ELEVATION_FAILED_MARKER)) {
+          return errorResult(new Error(result.output));
         }
 
         // Try to parse as JSON for pretty output

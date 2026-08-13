@@ -16,7 +16,7 @@ This server covers **every major ServiceNow module** — giving an AI assistant 
 | **Attachment API** | 4 | List, search, get metadata, and delete file attachments on any record |
 | **Batch API** | 1 | Execute multiple REST calls in a single batch request for performance |
 | **Data Policies** | 4 | Inspect server-side mandatory/read-only field enforcement rules |
-| **Script Execution** | 2 | Run server-side JavaScript using the native Background Scripts engine |
+| **Script Execution** | 2 | Run server-side JavaScript using the native Background Scripts engine; optionally self-elevate to security_admin for the script's session |
 
 ### ITSM (IT Service Management)
 | Module | Tools | What you can do |
@@ -138,6 +138,15 @@ Set `SERVICENOW_AUTH_METHOD` to choose how the server authenticates. See `.env.e
 **Background-script tool:** regardless of `SERVICENOW_AUTH_METHOD`, keep `SERVICENOW_USERNAME`/`SERVICENOW_PASSWORD` set if you want the background-script execution tool to work. It logs in through ServiceNow's UI (`sys.scripts.do`) rather than a REST endpoint, so it always needs a real username/password session — there's no OAuth or bearer-token equivalent for it.
 
 **Company/Microsoft SSO:** this server runs headless, so it can't complete an interactive Azure AD login. If your instance enforces SSO for all users, either use a ServiceNow integration account excluded from SSO enforcement with the `oauth` method, or — if your instance's Multi-Provider SSO is configured to accept externally-issued Azure AD tokens for API auth — obtain that token yourself (e.g. via an MSAL client-credentials flow) and supply it through `SERVICENOW_AUTH_METHOD=bearer`.
+
+## Role Elevation (security_admin)
+
+`sn_script_execute` accepts `elevate_security_admin: true`, which activates the `security_admin` role for that script's background-script session — the scripted equivalent of the "Elevate Roles" UI action, using the undocumented `GlideSecurityManager.get().enableElevatedRole()` API (no official REST endpoint exists for this).
+
+Real limits, not aspirational ones:
+- It only **activates** a role the `SERVICENOW_USERNAME` account already has assigned. It cannot grant `security_admin` to an account that doesn't hold it, and this fork does not implement impersonating another user to work around that — self-elevation only.
+- It only affects that one background script's session. It does **not** elevate the Table API create/update tools elsewhere in this server (schema, script, workflow, update-set) — those are stateless REST calls with no session to elevate.
+- If the account lacks the role, the tool fails with a clear error instead of silently running unelevated.
 
 ## Running
 
