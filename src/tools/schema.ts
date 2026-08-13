@@ -7,7 +7,7 @@ import { errorResult, jsonResult } from "../utils.js";
 export function registerSchemaTools(
   server: McpServer,
   client: ServiceNowClient,
-  _mode: Mode
+  mode: Mode
 ): void {
   server.tool(
     "sn_schema_tables",
@@ -216,6 +216,86 @@ export function registerSchemaTools(
         }
 
         return jsonResult({ table, ...results });
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  if (mode !== "develop") return;
+
+  // sn_schema_column_create — Develop only
+  server.tool(
+    "sn_schema_column_create",
+    "Create a new column/field on a table (sys_dictionary). This is a dictionary change — adding a field to a table.",
+    {
+      data: z
+        .record(z.unknown())
+        .describe(
+          "Field-value pairs for the new dictionary entry (must include 'name' (table), 'element' (field name), and 'internal_type' at minimum)"
+        ),
+    },
+    async ({ data }) => {
+      try {
+        const record = await client.create("sys_dictionary", data);
+        return jsonResult(record);
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  // sn_schema_column_update — Develop only
+  server.tool(
+    "sn_schema_column_update",
+    "Update an existing column/field definition (sys_dictionary) — e.g. change mandatory, max_length, default_value, read_only, reference table",
+    {
+      sys_id: z.string().describe("The sys_id of the sys_dictionary record to update"),
+      data: z.record(z.unknown()).describe("Field-value pairs to update"),
+    },
+    async ({ sys_id, data }) => {
+      try {
+        const record = await client.update("sys_dictionary", sys_id, data);
+        return jsonResult(record);
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  // sn_schema_choice_create — Develop only
+  server.tool(
+    "sn_schema_choice_create",
+    "Add a new choice list value to a field (sys_choice)",
+    {
+      data: z
+        .record(z.unknown())
+        .describe(
+          "Field-value pairs for the new choice (must include 'name' (table), 'element' (field), 'label', and 'value' at minimum)"
+        ),
+    },
+    async ({ data }) => {
+      try {
+        const record = await client.create("sys_choice", data);
+        return jsonResult(record);
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  // sn_schema_choice_update — Develop only
+  server.tool(
+    "sn_schema_choice_update",
+    "Update an existing choice list value (sys_choice) — e.g. relabel, reorder, activate/deactivate",
+    {
+      sys_id: z.string().describe("The sys_id of the sys_choice record to update"),
+      data: z.record(z.unknown()).describe("Field-value pairs to update"),
+    },
+    async ({ sys_id, data }) => {
+      try {
+        const record = await client.update("sys_choice", sys_id, data);
+        return jsonResult(record);
       } catch (error) {
         return errorResult(error);
       }

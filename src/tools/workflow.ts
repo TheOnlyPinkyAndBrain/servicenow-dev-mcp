@@ -7,7 +7,7 @@ import { errorResult, jsonResult } from "../utils.js";
 export function registerWorkflowTools(
   server: McpServer,
   client: ServiceNowClient,
-  _mode: Mode
+  mode: Mode
 ): void {
   server.tool(
     "sn_workflow_list",
@@ -171,6 +171,45 @@ export function registerWorkflowTools(
           count: result.records.length,
           history: result.records,
         });
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  if (mode !== "develop") return;
+
+  // sn_workflow_create — Develop only
+  server.tool(
+    "sn_workflow_create",
+    "Create a new legacy workflow (wf_workflow) container. Note: this creates the workflow record itself, not its activities/canvas — building activity logic (wf_activity, wf_transition) programmatically is fragile and best done in the Workflow Editor UI; this tool is meant for scripted setup of the workflow shell (name, table, description) ahead of manual activity design, or for updating metadata on an existing workflow.",
+    {
+      data: z
+        .record(z.unknown())
+        .describe("Field-value pairs for the new workflow (e.g. name, table, description)"),
+    },
+    async ({ data }) => {
+      try {
+        const record = await client.create("wf_workflow", data);
+        return jsonResult(record);
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  // sn_workflow_update — Develop only
+  server.tool(
+    "sn_workflow_update",
+    "Update an existing legacy workflow's metadata (name, table, description, active state)",
+    {
+      sys_id: z.string().describe("The sys_id of the workflow to update"),
+      data: z.record(z.unknown()).describe("Field-value pairs to update"),
+    },
+    async ({ sys_id, data }) => {
+      try {
+        const record = await client.update("wf_workflow", sys_id, data);
+        return jsonResult(record);
       } catch (error) {
         return errorResult(error);
       }

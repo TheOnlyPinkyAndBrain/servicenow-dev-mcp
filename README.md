@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A comprehensive MCP (Model Context Protocol) server that gives AI assistants expert-level access to any ServiceNow module. **299 tools across 44 modules.** Connects to a ServiceNow instance via Basic Auth, OAuth, or a bearer token and provides tools for debugging, inspecting configuration, and building features across the entire platform.
+A comprehensive MCP (Model Context Protocol) server that gives AI assistants expert-level access to any ServiceNow module. **306 tools across 44 modules.** Connects to a ServiceNow instance via Basic Auth, OAuth, or a bearer token and provides tools for debugging, inspecting configuration, and building features across the entire platform.
 
 ## Capabilities
 
@@ -11,7 +11,7 @@ This server covers **every major ServiceNow module** — giving an AI assistant 
 ### Core Platform
 | Module | Tools | What you can do |
 |--------|-------|----------------|
-| **Schema & Metadata** | 5 | Inspect table structures, columns, field types, choices, inheritance hierarchies, and reference relationships |
+| **Schema & Metadata** | 9 | Inspect table structures, columns, field types, choices, inheritance hierarchies, and reference relationships; create/update dictionary columns and choice values |
 | **Table API** | 5 | Query, create, update, delete records on any table |
 | **Attachment API** | 4 | List, search, get metadata, and delete file attachments on any record |
 | **Batch API** | 1 | Execute multiple REST calls in a single batch request for performance |
@@ -31,8 +31,8 @@ This server covers **every major ServiceNow module** — giving an AI assistant 
 | Module | Tools | What you can do |
 |--------|-------|----------------|
 | **Scripts** | 5 | List, read, search, create, update business rules, script includes, client scripts |
-| **Flow Designer** | 5 | Inspect flows, actions, subflows, and triggers |
-| **Workflows (Legacy)** | 6 | Trace workflow executions, activities, and version history |
+| **Flow Designer** | 5 | Inspect, create, and update flows; inspect actions, subflows, and triggers |
+| **Workflows (Legacy)** | 8 | Trace workflow executions, activities, and version history; create/update workflow metadata |
 
 ### Service Management
 | Module | Tools | What you can do |
@@ -98,7 +98,7 @@ This server covers **every major ServiceNow module** — giving an AI assistant 
 | Module | Tools | What you can do |
 |--------|-------|----------------|
 | **System Config** | 10 | Properties, scheduled jobs, apps, modules, aggregates, table impact analysis |
-| **Update Sets** | 5 | List, inspect, create update sets and review changes |
+| **Update Sets** | 6 | List, inspect, create update sets, review changes, and switch the active update set for the current user |
 | **UI Components** | 13 | UI pages, macros, scripts, form layouts, sections, related lists |
 | **Domain Separation** | 4 | Domain hierarchy, user/group visibility, domain overrides |
 | **Application Scope** | 4 | Scope listing, cross-scope privileges, pending access requests |

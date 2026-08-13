@@ -141,4 +141,62 @@ export function registerUpdateSetTools(
       }
     }
   );
+
+  server.tool(
+    "sn_update_set_set_current",
+    "Switch the active/current update set for the authenticated user. Table API writes are captured into whichever update set is 'current' for the user at the time of the write, independent of which update set you just created — call this before creating/updating script includes, business rules, flows, workflows, or dictionary entries so those changes land in the intended update set instead of whatever was previously active.",
+    {
+      update_set_sys_id: z.string().describe("sys_id of the update set to make current"),
+    },
+    async ({ update_set_sys_id }) => {
+      try {
+        // Resolve the authenticated user's own sys_id without needing to know
+        // which auth method/identity is in play — works the same for basic,
+        // bearer, and oauth sessions.
+        const me = await client.query("sys_user", {
+          sysparm_query: "sys_id=javascript:gs.getUserID()",
+          sysparm_fields: "sys_id,user_name",
+          sysparm_limit: 1,
+        });
+        if (me.records.length === 0) {
+          return errorResult(
+            new Error(
+              "Could not resolve the current user via gs.getUserID(). Your instance may block scripted encoded-query values on the Table API for this field/ACL."
+            )
+          );
+        }
+        const userSysId = (me.records[0] as Record<string, unknown>).sys_id as string;
+
+        const existingPref = await client.query("sys_user_preference", {
+          sysparm_query: `name=sys_update_set^user=${userSysId}`,
+          sysparm_fields: "sys_id,value",
+          sysparm_limit: 1,
+        });
+
+        let preference: Record<string, unknown>;
+        if (existingPref.records.length > 0) {
+          const prefSysId = (existingPref.records[0] as Record<string, unknown>).sys_id as string;
+          preference = await client.update("sys_user_preference", prefSysId, {
+            value: update_set_sys_id,
+          });
+        } else {
+          preference = await client.create("sys_user_preference", {
+            name: "sys_update_set",
+            user: userSysId,
+            value: update_set_sys_id,
+            type: "string",
+          });
+        }
+
+        return jsonResult({
+          message: "Current update set switched",
+          userSysId,
+          updateSetSysId: update_set_sys_id,
+          preference,
+        });
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
 }
