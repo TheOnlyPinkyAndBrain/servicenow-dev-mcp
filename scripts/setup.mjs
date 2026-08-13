@@ -121,7 +121,45 @@ async function main() {
 
   rl.close();
   console.log(`\nDone -- ${ENV_FILE} updated and re-encrypted.`);
-  console.log("Restart the MCP connection (Claude Desktop / Claude Code) for this to take effect.");
+
+  killRunningServer();
+}
+
+// Kills any currently-running instance of this specific server (matched by
+// its absolute dist/index.js path, so this can't touch an unrelated node
+// process) so a stale process can't keep serving old credentials silently.
+// This is as far as automation can go: an MCP client owns its server
+// process's lifecycle and spawns it once at connection time, so nothing
+// server-side -- this script included -- can make the client reconnect on
+// its own. Killing the process just makes that reconnect necessary and
+// visible instead of silently optional.
+function killRunningServer() {
+  const distEntry = join(__dirname, "..", "dist", "index.js");
+  const result = spawnSync("pgrep", ["-f", distEntry], { encoding: "utf8" });
+  const pids = (result.stdout || "")
+    .split("\n")
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map(Number)
+    .filter((pid) => pid !== process.pid);
+
+  if (pids.length === 0) {
+    console.log("No running server process found to restart -- connect (or reconnect) the MCP server to pick this up.");
+    return;
+  }
+
+  for (const pid of pids) {
+    try {
+      process.kill(pid, "SIGTERM");
+      console.log(`Stopped running server (pid ${pid}) so it can't keep using the old config.`);
+    } catch {
+      // already gone
+    }
+  }
+  console.log("Reconnect the MCP server in your client to pick up the new config:");
+  console.log("  Claude Code: try /mcp to reconnect, or start a new session if that's not available.");
+  console.log("  Claude Desktop: some versions auto-respawn a stopped server on the next tool call, others");
+  console.log("  don't -- if tools error out or look stale, fully quit (Cmd+Q) and reopen to be sure.");
 }
 
 main().catch((err) => {
