@@ -1,7 +1,7 @@
 {
   "name": "servicenow-mcp",
   "version": "3.0.0",
-  "description": "Comprehensive MCP server for ServiceNow — 310 tools across 44 modules for expert-level debugging and development",
+  "description": "Comprehensive MCP server for ServiceNow — 306 tools across 44 modules for expert-level debugging and development",
   "license": "MIT",
   "type": "module",
   "main": "dist/index.js",
@@ -11,8 +11,8 @@
     "dev": "tsx src/index.ts"
   },
   "dependencies": {
+    "@dotenvx/dotenvx": "^2.21.0",
     "@modelcontextprotocol/sdk": "^1.12.1",
-    "dotenv": "^16.4.7",
     "zod": "^3.24.2"
   },
   "devDependencies": {

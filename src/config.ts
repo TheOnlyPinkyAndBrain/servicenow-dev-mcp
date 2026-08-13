@@ -1,8 +1,11 @@
 import { z } from "zod";
-import dotenv from "dotenv";
+import { config as loadDotenvx } from "@dotenvx/dotenvx";
 import type { ServiceNowConfig } from "./types.js";
 
-dotenv.config({ path: process.env.SERVICENOW_ENV_FILE || ".env" });
+// dotenvx transparently decrypts values encrypted via `npx dotenvx encrypt`
+// (see .gitignore -- .env.keys holds the private key, never committed) while
+// still reading plain unencrypted values the same way `dotenv` always did.
+loadDotenvx({ path: [process.env.SERVICENOW_ENV_FILE || ".env"] });
 
 const configSchema = z
   .object({
