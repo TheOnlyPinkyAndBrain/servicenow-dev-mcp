@@ -129,6 +129,8 @@ SERVICENOW_MODE=debug
 
 Set `SERVICENOW_AUTH_METHOD` to choose how the server authenticates. See `.env.example` for the full set of variables per method.
 
+There's no in-app config page for switching this — MCP clients (Claude Desktop, Claude Code) read `.env` once at process startup, so changing auth method or credentials always means editing `.env` and restarting the MCP connection. `npm run setup` is an interactive wizard for that: it prompts for the method and only the fields it needs, masks secret input, and writes everything through `dotenvx set` so `.env` stays encrypted. Run it any time you want to switch methods or rotate credentials, then restart the connection.
+
 | Method | Env var | Notes |
 |---|---|---|
 | `basic` (default) | `SERVICENOW_USERNAME` / `SERVICENOW_PASSWORD` | Simplest option. |
