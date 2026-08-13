@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A comprehensive MCP (Model Context Protocol) server that gives AI assistants expert-level access to any ServiceNow module. **306 tools across 44 modules.** Connects to a ServiceNow instance via Basic Auth, OAuth, or a bearer token and provides tools for debugging, inspecting configuration, and building features across the entire platform.
+A comprehensive MCP (Model Context Protocol) server that gives AI assistants expert-level access to any ServiceNow module. **310 tools across 44 modules.** Connects to a ServiceNow instance via Basic Auth, OAuth, or a bearer token and provides tools for debugging, inspecting configuration, and building features across the entire platform.
 
 ## Capabilities
 
@@ -62,7 +62,7 @@ This server covers **every major ServiceNow module** — giving an AI assistant 
 ### Security & Compliance
 | Module | Tools | What you can do |
 |--------|-------|----------------|
-| **Security & ACLs** | 8 | ACLs, UI policies, UI actions, users, groups, roles |
+| **Security & ACLs** | 12 | Users, groups, roles; list/get/create/update Access Controls (ACLs), with ACL writes auto-elevated to security_admin |
 | **SecOps** | 7 | Security incidents, vulnerabilities (NVD), threat observables |
 | **GRC** | 6 | Policies, controls, risks, audit engagements, findings |
 
@@ -147,6 +147,8 @@ Real limits, not aspirational ones:
 - It only **activates** a role the `SERVICENOW_USERNAME` account already has assigned. It cannot grant `security_admin` to an account that doesn't hold it, and this fork does not implement impersonating another user to work around that — self-elevation only.
 - It only affects that one background script's session. It does **not** elevate the Table API create/update tools elsewhere in this server (schema, script, workflow, update-set) — those are stateless REST calls with no session to elevate.
 - If the account lacks the role, the tool fails with a clear error instead of silently running unelevated.
+
+**`sn_acl_create`/`sn_acl_update` auto-elevate — no flag needed.** ACLs (`sys_security_acl`) are the one table where ServiceNow itself refuses writes without an active security_admin elevation, so these two tools always route through the background-script engine with elevation forced on, rather than the plain Table API every other create/update tool uses. Same underlying limit applies: the `SERVICENOW_USERNAME` account must already hold `security_admin` directly.
 
 ## Running
 
