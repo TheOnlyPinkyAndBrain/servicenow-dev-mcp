@@ -310,7 +310,7 @@ export function registerProcurementTools(
   // ========== Approvals ==========
 
   server.tool(
-    "sn_approval_list",
+    "sn_procurement_approval_list",
     "List approvals (sysapproval_approver). Track approval status for procurement requests, contracts, and POs. Debug stuck approvals.",
     {
       source_table: z.string().optional().describe("Filter by source table, e.g. 'sc_req_item', 'ast_contract', 'sn_shop_purchase_order'"),

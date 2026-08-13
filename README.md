@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A comprehensive MCP (Model Context Protocol) server that gives AI assistants expert-level access to any ServiceNow module. **310 tools across 44 modules.** Connects to a ServiceNow instance via Basic Auth, OAuth, or a bearer token and provides tools for debugging, inspecting configuration, and building features across the entire platform.
+A comprehensive MCP (Model Context Protocol) server that gives AI assistants expert-level access to any ServiceNow module. **306 tools across 44 modules.** Connects to a ServiceNow instance via Basic Auth, OAuth, or a bearer token and provides tools for debugging, inspecting configuration, and building features across the entire platform.
 
 ## Capabilities
 
@@ -44,7 +44,7 @@ This server covers **every major ServiceNow module** — giving an AI assistant 
 ### CMDB & ITAM
 | Module | Tools | What you can do |
 |--------|-------|----------------|
-| **Configuration Items** | 11 | Browse CIs, relationships, CI classes, impacts |
+| **Configuration Items** | 11 | Browse CIs, relationships, CI classes, impacts; ACL writes auto-elevated to security_admin |
 | **CMDB** | 4 | CI class hierarchy, relationship types |
 | **IT Asset Management** | 8 | Hardware assets, software licenses, software installations, product models |
 
@@ -62,7 +62,7 @@ This server covers **every major ServiceNow module** — giving an AI assistant 
 ### Security & Compliance
 | Module | Tools | What you can do |
 |--------|-------|----------------|
-| **Security & ACLs** | 12 | Users, groups, roles; list/get/create/update Access Controls (ACLs), with ACL writes auto-elevated to security_admin |
+| **Security & ACLs** | 8 | ACLs, UI policies, UI actions, users, groups, roles |
 | **SecOps** | 7 | Security incidents, vulnerabilities (NVD), threat observables |
 | **GRC** | 6 | Policies, controls, risks, audit engagements, findings |
 

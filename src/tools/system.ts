@@ -74,8 +74,8 @@ export function registerSystemTools(
   // ========== Scheduled Jobs ==========
 
   server.tool(
-    "sn_scheduled_job_list",
-    "List scheduled jobs (sys_trigger). Shows job name, next action time, state, trigger type. Useful for debugging timing-related issues.",
+    "sn_sys_trigger_list",
+    "List scheduled job triggers (sys_trigger). Shows job name, next action time, state, trigger type. Useful for debugging timing-related issues.",
     {
       name: z.string().optional().describe("Filter by job name (contains match)"),
       state: z.enum(["0", "1", "2"]).optional().describe("Filter by state: 0=Ready, 1=Processing, 2=Complete"),
@@ -129,7 +129,7 @@ export function registerSystemTools(
   // ========== Application Scopes ==========
 
   server.tool(
-    "sn_app_list",
+    "sn_app_scope_list",
     "List application scopes (sys_scope). Shows custom and store apps installed on the instance.",
     {
       name: z.string().optional().describe("Filter by app name (contains match)"),

@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServiceNowClient } from "../client.js";
 import { ServiceNowApiError } from "../client.js";
 import type { Mode } from "../types.js";
+import { runElevatedGlideRecordWrite } from "../utils.js";
 
 function errorResult(error: unknown) {
   const message =
@@ -291,46 +292,66 @@ export function registerConfigItemTools(
   // ========== Develop-only tools ==========
   if (mode !== "develop") return;
 
-  // sn_acl_create — Develop only
+  // sn_acl_create — Develop only. Always self-elevates to security_admin;
+  // the platform refuses ACL writes without it, REST or otherwise, so this
+  // routes through the background-script engine instead of the plain Table
+  // API every other create tool in this server uses.
   server.tool(
     "sn_acl_create",
-    "Create a new ACL",
+    "Create a new Access Control (sys_security_acl). Automatically self-elevates to security_admin for this write (see the Role Elevation section in the README) — this only works if the SERVICENOW_USERNAME account already holds security_admin directly; it cannot grant the role.",
     {
       data: z
         .record(z.unknown())
-        .describe("Field-value pairs for the new ACL"),
+        .describe(
+          "Field-value pairs for the new ACL (typically 'name' (table or table.field), 'operation' " +
+          "(read/write/create/delete), 'type' (record/field), 'active', 'admin_overrides', 'script', 'condition', 'roles')"
+        ),
     },
     async ({ data }) => {
-      try {
-        const record = await client.create("sys_security_acl", data);
-        return {
-          content: [{ type: "text", text: JSON.stringify(record, null, 2) }],
-        };
-      } catch (error) {
-        return errorResult(error);
-      }
+      const script = [
+        `var data = ${JSON.stringify(data)};`,
+        "var gr = new GlideRecord('sys_security_acl');",
+        "gr.initialize();",
+        "for (var key in data) { gr.setValue(key, data[key]); }",
+        "var sysId = gr.insert();",
+        "if (!sysId) {",
+        "  gs.print(JSON.stringify({ error: true, message: 'ACL insert failed', lastError: gr.getLastErrorMessage ? gr.getLastErrorMessage() : null }));",
+        "} else {",
+        "  var out = { sys_id: sysId };",
+        "  for (var k in data) { out[k] = gr.getValue(k); }",
+        "  gs.print(JSON.stringify(out));",
+        "}",
+      ].join("\n");
+
+      return runElevatedGlideRecordWrite(client, script);
     }
   );
 
-  // sn_acl_update — Develop only
+  // sn_acl_update — Develop only. Always self-elevates to security_admin.
   server.tool(
     "sn_acl_update",
-    "Update an existing ACL",
+    "Update an existing Access Control (sys_security_acl). Automatically self-elevates to security_admin for this write — this only works if the SERVICENOW_USERNAME account already holds security_admin directly; it cannot grant the role.",
     {
       sys_id: z.string().describe("The sys_id of the ACL to update"),
-      data: z
-        .record(z.unknown())
-        .describe("Field-value pairs to update"),
+      data: z.record(z.unknown()).describe("Field-value pairs to update"),
     },
     async ({ sys_id, data }) => {
-      try {
-        const record = await client.update("sys_security_acl", sys_id, data);
-        return {
-          content: [{ type: "text", text: JSON.stringify(record, null, 2) }],
-        };
-      } catch (error) {
-        return errorResult(error);
-      }
+      const script = [
+        `var sysId = ${JSON.stringify(sys_id)};`,
+        `var data = ${JSON.stringify(data)};`,
+        "var gr = new GlideRecord('sys_security_acl');",
+        "if (!gr.get(sysId)) {",
+        "  gs.print(JSON.stringify({ error: true, message: 'ACL not found: ' + sysId }));",
+        "} else {",
+        "  for (var key in data) { gr.setValue(key, data[key]); }",
+        "  gr.update();",
+        "  var out = { sys_id: sysId };",
+        "  for (var k in data) { out[k] = gr.getValue(k); }",
+        "  gs.print(JSON.stringify(out));",
+        "}",
+      ].join("\n");
+
+      return runElevatedGlideRecordWrite(client, script);
     }
   );
 
