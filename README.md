@@ -134,7 +134,7 @@ There's no in-app config page for switching this — MCP clients (Claude Desktop
 | Method | Env var | Notes |
 |---|---|---|
 | `basic` (default) | `SERVICENOW_USERNAME` / `SERVICENOW_PASSWORD` | Simplest option. |
-| `bearer` | `SERVICENOW_ACCESS_TOKEN` | Static token you fetch/rotate yourself. |
+| `bearer` | `SERVICENOW_ACCESS_TOKEN` | ServiceNow has no long-lived personal-access-token concept — this must be a ServiceNow-issued OAuth access token (same kind `oauth` fetches automatically, just pre-obtained by you) or an externally-issued OIDC/JWT token trusted via Multi-Provider SSO / External OAuth (instance-admin config, not default). Typically short-lived and not auto-refreshed by this server. If you don't already have a token from elsewhere, use `oauth` instead. |
 | `oauth` | `SERVICENOW_OAUTH_CLIENT_ID` / `SERVICENOW_OAUTH_CLIENT_SECRET` (+ `SERVICENOW_OAUTH_USERNAME`/`PASSWORD` for the default `password` grant) | Uses ServiceNow's own `/oauth_token.do` endpoint. Tokens are cached and refreshed automatically, with a one-shot re-auth retry on 401. Requires an OAuth application registered on the instance under System OAuth > Application Registry. |
 
 **Background-script tool:** regardless of `SERVICENOW_AUTH_METHOD`, keep `SERVICENOW_USERNAME`/`SERVICENOW_PASSWORD` set if you want the background-script execution tool to work. It logs in through ServiceNow's UI (`sys.scripts.do`) rather than a REST endpoint, so it always needs a real username/password session — there's no OAuth or bearer-token equivalent for it.

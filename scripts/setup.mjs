@@ -115,12 +115,17 @@ async function main() {
   heading("Authentication method");
 
   hint("basic  = simplest. Just a ServiceNow username + password.");
-  hint("bearer = a pre-issued access token you already have (e.g. from an SSO");
-  hint("         broker). You're responsible for rotating it -- this server");
-  hint("         doesn't refresh it for you.");
+  hint("bearer = a token you already have from somewhere else -- ServiceNow has");
+  hint("         no long-lived personal-access-token concept, so this must be");
+  hint("         either a ServiceNow OAuth access token or (rarely) an");
+  hint("         externally-trusted OIDC token. Usually short-lived and NOT");
+  hint("         auto-refreshed -- if you don't already have one handed to");
+  hint("         you, pick oauth below instead.");
   hint("oauth  = ServiceNow's own OAuth token endpoint. Needs an OAuth");
   hint("         application already registered on the instance under");
   hint("         System OAuth > Application Registry (client ID + secret).");
+  hint("         Fetches and refreshes tokens automatically -- the right");
+  hint("         choice if you don't already have a token in hand.");
   const method = (await ask("Auth method (basic/bearer/oauth)", process.env.SERVICENOW_AUTH_METHOD || "basic")).toLowerCase();
   if (!["basic", "bearer", "oauth"].includes(method)) {
     console.error(`Unknown auth method "${method}" -- must be basic, bearer, or oauth.`);
@@ -139,9 +144,15 @@ async function main() {
     hint("Never echoed to the screen or logged. Stored encrypted in .env.");
     setVar("SERVICENOW_PASSWORD", await askSecret("Password", !!process.env.SERVICENOW_PASSWORD));
   } else if (method === "bearer") {
-    hint("Paste a token you've already obtained elsewhere. Never echoed or logged.");
-    hint("This server does not fetch, validate, or refresh it -- if it expires,");
-    hint("every request just starts failing until you run this again with a new one.");
+    hint("Must be either a ServiceNow-issued OAuth access token (the same kind");
+    hint("the oauth method fetches automatically -- valid if you already");
+    hint("obtained one yourself some other way) or an externally-issued OIDC/JWT");
+    hint("token, which only works if your instance has Multi-Provider SSO /");
+    hint("External OAuth configured to trust that issuer for API calls --");
+    hint("check with your ServiceNow admin before assuming that's set up.");
+    hint("Typically short-lived (often ~30 min) and NOT refreshed by this");
+    hint("server -- once it expires, every request fails until you paste in a");
+    hint("fresh one via this wizard. Never echoed or logged.");
     setVar("SERVICENOW_ACCESS_TOKEN", await askSecret("Access token", !!process.env.SERVICENOW_ACCESS_TOKEN));
   } else {
     hint("From your ServiceNow instance: System OAuth > Application Registry.");
