@@ -2,7 +2,7 @@
 
 UI policies/actions/pages and Service Portal.
 
-**Module folder:** `src/tools/platform-user-interface/` · **Files:** 2 · **Tools:** 19
+**Module folder:** `src/tools/platform-user-interface/` · **Files:** 3 · **Tools:** 26
 
 Read-only tools (`both`) work in `debug` and `develop` modes; `develop` tools require `SERVICENOW_MODE=develop`.
 
@@ -22,9 +22,16 @@ Read-only tools (`both`) work in `debug` and `develop` modes; `develop` tools re
 | `sn_sp_portal_list` | both | List Service Portals (sp_portal). Shows portal configuration and settings. |
 | `sn_sp_widget_get` | both | Get full Service Portal widget details including HTML template, CSS, client script, server script, and link function |
 | `sn_sp_widget_list` | both | List Service Portal widgets (sp_widget). Widgets are the building blocks of Service Portal pages. |
+| `sn_ui_action_get` | both | Get full UI Action details (sys_ui_action) including script and conditions |
+| `sn_ui_action_list` | both | List UI Actions (sys_ui_action) — buttons, links, context menus — filtered by table |
 | `sn_ui_macro_list` | both | List UI Macros (sys_ui_macro) — reusable Jelly template components |
 | `sn_ui_page_get` | both | Get full UI Page details including HTML, client script, and processing script |
 | `sn_ui_page_list` | both | List UI Pages (sys_ui_page) — Jelly-based pages used across the platform. Includes processor pages and custom pages. |
+| `sn_ui_policy_actions` | both | List UI Policy Actions (sys_ui_policy_action) for a UI Policy — field visibility, mandatory, and read-only settings |
+| `sn_ui_policy_create` | develop | Create a new UI Policy (sys_ui_policy) |
+| `sn_ui_policy_get` | both | Get a UI Policy by sys_id, including its associated UI Policy Actions |
+| `sn_ui_policy_list` | both | List UI Policies (sys_ui_policy), optionally filtered by table or active status |
+| `sn_ui_policy_update` | develop | Update an existing UI Policy (sys_ui_policy) |
 | `sn_ui_script_get` | both | Get full UI Script details including source code |
 | `sn_ui_script_list` | both | List UI Scripts (sys_ui_script) — global client-side JavaScript libraries loaded on pages |
 

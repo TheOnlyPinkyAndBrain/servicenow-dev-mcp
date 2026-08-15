@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-A comprehensive MCP (Model Context Protocol) server providing expert-level access to ServiceNow instances. v3.2.0 with 320 tools across 47 modules.
+A comprehensive MCP (Model Context Protocol) server providing expert-level access to ServiceNow instances. v3.3.0 with 330 tools across 50 modules.
 
 ## Architecture
 
@@ -12,7 +12,7 @@ A comprehensive MCP (Model Context Protocol) server providing expert-level acces
 - **Config**: `src/config.ts` — loads and validates env vars via Zod
 - **Types**: `src/types.ts` — shared TypeScript types (`Mode`, `ServiceNowConfig`, `QueryParams`, `PaginatedResult`)
 - **Utils**: `src/utils.ts` — shared helpers (`errorResult`, `jsonResult`, `textResult`, `buildQuery`)
-- **Tools**: `src/tools/<servicenow-module>/*.ts` — 47 tool modules grouped into 15 folders named after ServiceNow product modules (e.g. `it-service-management/`, `it-operations-management/`, `it-asset-management/`, `servicenow-platform/`, `now-platform/`, `platform-security/`, `platform-user-interface/`, `application-development/`, `integrate-applications/`, `customer-service-management/`, `employee-service-management/`, `security-management/`, `governance-risk-compliance/`, `now-intelligence/`, `source-to-pay-operations/`). Each module exports a `registerXxxTools(server, client, mode)` function. Folder names match the ServiceNow docs taxonomy (`/Users/sukhmal/code/ServiceNow/ServiceNowDocs/markdown/`).
+- **Tools**: `src/tools/<servicenow-module>/*.ts` — 50 tool modules grouped into 15 folders named after ServiceNow product modules (e.g. `it-service-management/`, `it-operations-management/`, `it-asset-management/`, `servicenow-platform/`, `now-platform/`, `platform-security/`, `platform-user-interface/`, `application-development/`, `integrate-applications/`, `customer-service-management/`, `employee-service-management/`, `security-management/`, `governance-risk-compliance/`, `now-intelligence/`, `source-to-pay-operations/`). Each module exports a `registerXxxTools(server, client, mode)` function. Folder names match the ServiceNow docs taxonomy (`/Users/sukhmal/code/ServiceNow/ServiceNowDocs/markdown/`).
 
 ## Tool Module Pattern
 

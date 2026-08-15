@@ -22,7 +22,9 @@ import { registerUpgradeTools } from "./now-platform/upgrade.js";
 
 // Platform Security / UI
 import { registerSecurityTools } from "./platform-security/security.js";
+import { registerAclTools } from "./platform-security/acl.js";
 import { registerUiTools } from "./platform-user-interface/ui.js";
+import { registerUiConfigTools } from "./platform-user-interface/ui-policy.js";
 import { registerServicePortalTools } from "./platform-user-interface/service-portal.js";
 
 // ITSM tools
@@ -42,10 +44,11 @@ import { registerFlowTools } from "./application-development/flow.js";
 import { registerWorkflowTools } from "./application-development/workflow.js";
 import { registerCicdTools } from "./application-development/cicd.js";
 
-// ServiceNow Platform (CMDB, Knowledge)
+// ServiceNow Platform (CMDB, Knowledge, Interaction, Skills)
 import { registerKnowledgeTools } from "./servicenow-platform/knowledge.js";
-import { registerConfigItemTools } from "./servicenow-platform/config-items.js";
 import { registerCmdbTools } from "./servicenow-platform/cmdb.js";
+import { registerInteractionTools } from "./servicenow-platform/interaction.js";
+import { registerSkillTools } from "./servicenow-platform/skills.js";
 
 // ITAM / ITOM
 import { registerAssetTools } from "./it-asset-management/asset.js";
@@ -103,7 +106,9 @@ export const registrars: Registrar[] = [
 
   // Platform Security / UI
   registerSecurityTools,
+  registerAclTools,
   registerUiTools,
+  registerUiConfigTools,
   registerServicePortalTools,
 
   // ITSM
@@ -123,10 +128,11 @@ export const registrars: Registrar[] = [
   registerWorkflowTools,
   registerCicdTools,
 
-  // ServiceNow Platform (CMDB, Knowledge)
+  // ServiceNow Platform (CMDB, Knowledge, Interaction, Skills)
   registerKnowledgeTools,
-  registerConfigItemTools,
   registerCmdbTools,
+  registerInteractionTools,
+  registerSkillTools,
 
   // ITAM / ITOM
   registerAssetTools,
