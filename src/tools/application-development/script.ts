@@ -3,12 +3,14 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServiceNowClient } from "../../client.js";
 import { ServiceNowApiError } from "../../client.js";
 import type { Mode } from "../../types.js";
+import { CREATE, READ, UPDATE } from "../../annotations.js";
 
 const SCRIPT_TYPES = {
   business_rule: "sys_script",
   script_include: "sys_script_include",
-  client_script: "sys_ui_client_script",
-  fix_script: "sys_fix_script",
+  client_script: "sys_script_client",
+  fix_script: "sys_script_fix",
+  email_script: "sys_script_email",
 } as const;
 
 type ScriptType = keyof typeof SCRIPT_TYPES;
@@ -18,6 +20,7 @@ const scriptTypeEnum = z.enum([
   "script_include",
   "client_script",
   "fix_script",
+  "email_script",
 ]);
 
 function errorResult(error: unknown) {
@@ -40,6 +43,8 @@ const LIST_FIELDS: Record<ScriptType, string> = {
     "sys_id,name,table,active,type,ui_type,sys_updated_on,sys_updated_by",
   fix_script:
     "sys_id,name,active,sys_updated_on,sys_updated_by",
+  email_script:
+    "sys_id,name,sys_updated_on,sys_updated_by",
 };
 
 export function registerScriptTools(
@@ -62,6 +67,7 @@ export function registerScriptTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ type, table, active, query, limit, offset }) => {
       try {
         const tableName = SCRIPT_TYPES[type];
@@ -109,6 +115,7 @@ export function registerScriptTools(
       type: scriptTypeEnum.describe("Script type"),
       sys_id: z.string().describe("The sys_id of the script record"),
     },
+    READ,
     async ({ type, sys_id }) => {
       try {
         const tableName = SCRIPT_TYPES[type];
@@ -134,6 +141,7 @@ export function registerScriptTools(
       table: z.string().optional().describe("Filter by table name"),
       limit: z.coerce.number().min(1).max(50).optional().describe("Max records (default 10)"),
     },
+    READ,
     async ({ type, search_text, table, limit }) => {
       try {
         const tableName = SCRIPT_TYPES[type];
@@ -186,6 +194,7 @@ export function registerScriptTools(
           "Field-value pairs for the script (must include 'name' and 'script' at minimum)"
         ),
     },
+    CREATE,
     async ({ type, data }) => {
       try {
         const tableName = SCRIPT_TYPES[type];
@@ -210,6 +219,7 @@ export function registerScriptTools(
         .record(z.string(), z.unknown())
         .describe("Field-value pairs to update"),
     },
+    UPDATE,
     async ({ type, sys_id, data }) => {
       try {
         const tableName = SCRIPT_TYPES[type];

@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A comprehensive MCP (Model Context Protocol) server that gives AI assistants expert-level access to any ServiceNow module. **347 tools across 54 modules.** Connects to a ServiceNow instance via Basic Auth and provides tools for debugging, inspecting configuration, and building features across the entire platform.
+A comprehensive MCP (Model Context Protocol) server that gives AI assistants expert-level access to any ServiceNow module. **349 tools across 54 modules.** Connects to a ServiceNow instance via Basic Auth and provides tools for debugging, inspecting configuration, and building features across the entire platform.
 
 ## Coverage model
 
@@ -23,7 +23,7 @@ Tools are organized into folders named after ServiceNow product modules (matchin
 | Now Platform (core) | `now-platform` | 78 | [README](src/tools/now-platform/README.md) |
 | Source-to-Pay Operations | `source-to-pay-operations` | 58 | [README](src/tools/source-to-pay-operations/README.md) |
 | ServiceNow Platform (CMDB, Knowledge, Interaction, Skills) | `servicenow-platform` | 26 | [README](src/tools/servicenow-platform/README.md) |
-| Application Development | `application-development` | 24 | [README](src/tools/application-development/README.md) |
+| Application Development | `application-development` | 26 | [README](src/tools/application-development/README.md) |
 | Platform User Interface | `platform-user-interface` | 26 | [README](src/tools/platform-user-interface/README.md) |
 | Integration | `integrate-applications` | 18 | [README](src/tools/integrate-applications/README.md) |
 | IT Asset Management (ITAM) | `it-asset-management` | 8 | [README](src/tools/it-asset-management/README.md) |
@@ -35,7 +35,7 @@ Tools are organized into folders named after ServiceNow product modules (matchin
 | Governance, Risk & Compliance (GRC) | `governance-risk-compliance` | 6 | [README](src/tools/governance-risk-compliance/README.md) |
 | Platform Analytics | `now-intelligence` | 4 | [README](src/tools/now-intelligence/README.md) |
 
-_54 tool modules · 347 tools across 15 ServiceNow module folders._
+_54 tool modules · 349 tools across 15 ServiceNow module folders._
 
 ## Capabilities
 

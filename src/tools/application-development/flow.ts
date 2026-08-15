@@ -3,6 +3,8 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServiceNowClient } from "../../client.js";
 import { ServiceNowApiError } from "../../client.js";
 import type { Mode } from "../../types.js";
+import { CREATE, READ, UPDATE } from "../../annotations.js";
+import { jsonResult } from "../../utils.js";
 
 function errorResult(error: unknown) {
   const message =
@@ -30,6 +32,7 @@ export function registerFlowTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ active, scope, query, limit, offset }) => {
       try {
         const queryParts: string[] = [];
@@ -75,6 +78,7 @@ export function registerFlowTools(
     {
       sys_id: z.string().describe("The sys_id of the flow"),
     },
+    READ,
     async ({ sys_id }) => {
       try {
         const record = await client.getById("sys_hub_flow", sys_id);
@@ -97,6 +101,7 @@ export function registerFlowTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ active, scope, limit, offset }) => {
       try {
         const queryParts: string[] = [];
@@ -134,6 +139,36 @@ export function registerFlowTools(
     }
   );
 
+  server.tool(
+    "sn_flow_action_type_list",
+    "List Flow Designer action types (sys_hub_action_type_definition) — the catalog of available actions (from spokes and core) that flows and subflows can use.",
+    {
+      name: z.string().optional().describe("Filter by name/label (contains match)"),
+      query: z.string().optional().describe("Additional encoded query"),
+      limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
+    },
+    READ,
+    async ({ name, query, limit, offset }) => {
+      try {
+        const queryParts: string[] = [];
+        if (name) queryParts.push(`nameLIKE${name}`);
+        if (query) queryParts.push(query);
+        queryParts.push("ORDERBYname");
+        const result = await client.query("sys_hub_action_type_definition", {
+          sysparm_query: queryParts.join("^"),
+          sysparm_fields: "sys_id,name,label,category,description,active,sys_scope,sys_updated_on",
+          sysparm_limit: limit,
+          sysparm_offset: offset,
+          sysparm_display_value: "true",
+        });
+        return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
   if (mode !== "develop") return;
 
   // sn_flow_create — Develop only
@@ -145,6 +180,7 @@ export function registerFlowTools(
         .record(z.string(), z.unknown())
         .describe("Field-value pairs for the new flow"),
     },
+    CREATE,
     async ({ data }) => {
       try {
         const record = await client.create("sys_hub_flow", data);
@@ -167,6 +203,7 @@ export function registerFlowTools(
         .record(z.string(), z.unknown())
         .describe("Field-value pairs to update"),
     },
+    UPDATE,
     async ({ sys_id, data }) => {
       try {
         const record = await client.update("sys_hub_flow", sys_id, data);

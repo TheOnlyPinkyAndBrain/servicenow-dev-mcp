@@ -2,18 +2,20 @@
 
 Business rules & scripts, Flow Designer, legacy workflows, and CI/CD.
 
-**Module folder:** `src/tools/application-development/` · **Files:** 4 · **Tools:** 24
+**Module folder:** `src/tools/application-development/` · **Files:** 4 · **Tools:** 26
 
 Read-only tools (`both`) work in `debug` and `develop` modes; `develop` tools require `SERVICENOW_MODE=develop`.
 
 | Tool | Mode | Description |
 |------|------|-------------|
 | `sn_atf_result_list` | both | List ATF test execution results |
+| `sn_atf_step_list` | both | List ATF test steps (sys_atf_step) — the ordered steps within an Automated Test Framework test. |
 | `sn_atf_suite_list` | both | List ATF test suites |
 | `sn_atf_test_list` | both | List Automated Test Framework (ATF) tests |
 | `sn_cicd_activate_plugin` | develop | Activate a plugin via the CI/CD API |
 | `sn_cicd_apply_source_control` | develop | Apply source control changes via CI/CD API |
 | `sn_cicd_run_test_suite` | develop | Run an ATF test suite via the CI/CD API (sn_cicd) |
+| `sn_flow_action_type_list` | both | List Flow Designer action types (sys_hub_action_type_definition) — the catalog of available actions (from spokes and core) that flows and subflows can use. |
 | `sn_flow_create` | develop | Create a new Flow Designer flow |
 | `sn_flow_get` | both | Get full Flow Designer flow details by sys_id |
 | `sn_flow_list` | both | List Flow Designer flows with status, scope, and trigger type |

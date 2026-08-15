@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServiceNowClient } from "../../client.js";
 import type { Mode } from "../../types.js";
 import { errorResult, jsonResult } from "../../utils.js";
+import { ACTION, READ } from "../../annotations.js";
 
 export function registerCicdTools(
   server: McpServer,
@@ -19,6 +20,7 @@ export function registerCicdTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ name, active, sys_scope, limit, offset }) => {
       try {
         const qp: string[] = [];
@@ -51,6 +53,7 @@ export function registerCicdTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ name, active, limit, offset }) => {
       try {
         const qp: string[] = [];
@@ -83,6 +86,7 @@ export function registerCicdTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ test, test_suite, status, limit, offset }) => {
       try {
         const qp: string[] = [];
@@ -115,6 +119,7 @@ export function registerCicdTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ name, scope, active, limit, offset }) => {
       try {
         const qp: string[] = [];
@@ -159,6 +164,7 @@ export function registerCicdTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 50)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ name, active, limit, offset }) => {
       try {
         const qp: string[] = [];
@@ -181,6 +187,36 @@ export function registerCicdTools(
     }
   );
 
+  server.tool(
+    "sn_atf_step_list",
+    "List ATF test steps (sys_atf_step) — the ordered steps within an Automated Test Framework test.",
+    {
+      test: z.string().optional().describe("Filter by parent ATF test sys_id (sys_atf_test)"),
+      query: z.string().optional().describe("Additional encoded query"),
+      limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 50)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
+    },
+    READ,
+    async ({ test, query, limit, offset }) => {
+      try {
+        const queryParts: string[] = [];
+        if (test) queryParts.push(`test=${test}`);
+        if (query) queryParts.push(query);
+        queryParts.push("ORDERBYorder");
+        const result = await client.query("sys_atf_step", {
+          sysparm_query: queryParts.join("^"),
+          sysparm_fields: "sys_id,test,step_config,order,active,description,sys_updated_on",
+          sysparm_limit: limit ?? 50,
+          sysparm_offset: offset,
+          sysparm_display_value: "true",
+        });
+        return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
   if (mode !== "develop") return;
 
   server.tool(
@@ -189,6 +225,7 @@ export function registerCicdTools(
     {
       test_suite_sys_id: z.string().describe("Test suite sys_id"),
     },
+    ACTION,
     async ({ test_suite_sys_id }) => {
       try {
         const result = await client.restApi(
@@ -208,6 +245,7 @@ export function registerCicdTools(
     {
       plugin_id: z.string().describe("Plugin ID to activate"),
     },
+    ACTION,
     async ({ plugin_id }) => {
       try {
         const result = await client.restApi(
@@ -228,6 +266,7 @@ export function registerCicdTools(
       app_scope: z.string().describe("Application scope"),
       branch_name: z.string().optional().describe("Branch name"),
     },
+    ACTION,
     async ({ app_scope, branch_name }) => {
       try {
         const body: Record<string, unknown> = { app_scope };

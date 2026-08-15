@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServiceNowClient } from "../../client.js";
 import type { Mode } from "../../types.js";
 import { errorResult, jsonResult } from "../../utils.js";
+import { READ } from "../../annotations.js";
 
 export function registerWorkflowTools(
   server: McpServer,
@@ -19,6 +20,7 @@ export function registerWorkflowTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ name, table, active, limit, offset }) => {
       try {
         const queryParts: string[] = [];
@@ -52,6 +54,7 @@ export function registerWorkflowTools(
     {
       sys_id: z.string().describe("The sys_id of the workflow"),
     },
+    READ,
     async ({ sys_id }) => {
       try {
         const record = await client.getById("wf_workflow", sys_id);
@@ -68,6 +71,7 @@ export function registerWorkflowTools(
     {
       workflow_sys_id: z.string().describe("The sys_id of the parent workflow"),
     },
+    READ,
     async ({ workflow_sys_id }) => {
       try {
         const result = await client.query("wf_workflow_version", {
@@ -94,6 +98,7 @@ export function registerWorkflowTools(
     {
       version_sys_id: z.string().describe("The sys_id of the workflow version"),
     },
+    READ,
     async ({ version_sys_id }) => {
       try {
         const result = await client.query("wf_activity", {
@@ -124,6 +129,7 @@ export function registerWorkflowTools(
       state: z.enum(["executing", "finished", "cancelled"]).optional().describe("Filter by execution state"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
     },
+    READ,
     async ({ workflow_sys_id, table, document_id, state, limit }) => {
       try {
         const queryParts: string[] = [];
@@ -157,6 +163,7 @@ export function registerWorkflowTools(
     {
       context_sys_id: z.string().describe("The sys_id of the workflow context (execution)"),
     },
+    READ,
     async ({ context_sys_id }) => {
       try {
         const result = await client.query("wf_history", {
