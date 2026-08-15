@@ -142,7 +142,7 @@ export function registerFlowTools(
     "Create a new Flow Designer flow",
     {
       data: z
-        .record(z.unknown())
+        .record(z.string(), z.unknown())
         .describe("Field-value pairs for the new flow"),
     },
     async ({ data }) => {
@@ -164,7 +164,7 @@ export function registerFlowTools(
     {
       sys_id: z.string().describe("The sys_id of the flow to update"),
       data: z
-        .record(z.unknown())
+        .record(z.string(), z.unknown())
         .describe("Field-value pairs to update"),
     },
     async ({ sys_id, data }) => {

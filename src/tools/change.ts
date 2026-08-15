@@ -178,7 +178,7 @@ export function registerChangeTools(
       start_date: z.string().optional().describe("Planned start date"),
       end_date: z.string().optional().describe("Planned end date"),
       template_id: z.string().optional().describe("Standard change template sys_id (required for standard type)"),
-      additional_fields: z.record(z.unknown()).optional().describe("Additional fields"),
+      additional_fields: z.record(z.string(), z.unknown()).optional().describe("Additional fields"),
     },
     async ({ type, short_description, description, assignment_group, category, risk, impact, start_date, end_date, template_id, additional_fields }) => {
       try {
@@ -213,7 +213,7 @@ export function registerChangeTools(
     "Update an existing change request",
     {
       sys_id: z.string().describe("Change request sys_id"),
-      fields: z.record(z.unknown()).describe("Field values to update"),
+      fields: z.record(z.string(), z.unknown()).describe("Field values to update"),
     },
     async ({ sys_id, fields }) => {
       try {

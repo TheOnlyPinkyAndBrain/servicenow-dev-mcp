@@ -283,7 +283,7 @@ export function registerCatalogTools(
     {
       cat_item_sys_id: z.string().describe("The sys_id of the catalog item (sc_cat_item) to order"),
       quantity: z.coerce.number().min(1).optional().describe("Quantity to order (default 1)"),
-      variables: z.record(z.unknown()).optional().describe("Variable values keyed by variable name, e.g. { justification: 'new hire', size: 'large' }"),
+      variables: z.record(z.string(), z.unknown()).optional().describe("Variable values keyed by variable name, e.g. { justification: 'new hire', size: 'large' }"),
     },
     async ({ cat_item_sys_id, quantity, variables }) => {
       try {
@@ -309,7 +309,7 @@ export function registerCatalogTools(
     {
       cat_item_sys_id: z.string().describe("The sys_id of the catalog item (sc_cat_item) to add"),
       quantity: z.coerce.number().min(1).optional().describe("Quantity to add (default 1)"),
-      variables: z.record(z.unknown()).optional().describe("Variable values keyed by variable name"),
+      variables: z.record(z.string(), z.unknown()).optional().describe("Variable values keyed by variable name"),
     },
     async ({ cat_item_sys_id, quantity, variables }) => {
       try {

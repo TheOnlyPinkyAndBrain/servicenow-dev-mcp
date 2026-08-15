@@ -310,7 +310,7 @@ export function registerProcurementTools(
   // ========== Approvals ==========
 
   server.tool(
-    "sn_approval_list",
+    "sn_procurement_approval_list",
     "List approvals (sysapproval_approver). Track approval status for procurement requests, contracts, and POs. Debug stuck approvals.",
     {
       source_table: z.string().optional().describe("Filter by source table, e.g. 'sc_req_item', 'ast_contract', 'sn_shop_purchase_order'"),
@@ -444,7 +444,7 @@ export function registerProcurementTools(
       state: z.string().optional().describe("State, e.g. 'draft', 'active'"),
       po_number: z.string().optional().describe("Purchase order number"),
       total_cost: z.string().optional().describe("Total cost"),
-      additional_fields: z.record(z.unknown()).optional().describe("Additional fields"),
+      additional_fields: z.record(z.string(), z.unknown()).optional().describe("Additional fields"),
     },
     async ({ short_description, vendor, starts, ends, state, po_number, total_cost, additional_fields }) => {
       try {
@@ -468,7 +468,7 @@ export function registerProcurementTools(
     "Update an existing contract (ast_contract).",
     {
       sys_id: z.string().describe("The sys_id of the contract"),
-      fields: z.record(z.unknown()).describe("Fields to update"),
+      fields: z.record(z.string(), z.unknown()).describe("Fields to update"),
     },
     async ({ sys_id, fields }) => {
       try {
@@ -488,7 +488,7 @@ export function registerProcurementTools(
       vendor_type: z.string().optional().describe("Vendor type sys_id"),
       phone: z.string().optional().describe("Phone number"),
       website: z.string().optional().describe("Website URL"),
-      additional_fields: z.record(z.unknown()).optional().describe("Additional fields"),
+      additional_fields: z.record(z.string(), z.unknown()).optional().describe("Additional fields"),
     },
     async ({ name, vendor_type, phone, website, additional_fields }) => {
       try {
@@ -510,7 +510,7 @@ export function registerProcurementTools(
     "Update an existing vendor (core_company).",
     {
       sys_id: z.string().describe("The sys_id of the vendor"),
-      fields: z.record(z.unknown()).describe("Fields to update"),
+      fields: z.record(z.string(), z.unknown()).describe("Fields to update"),
     },
     async ({ sys_id, fields }) => {
       try {

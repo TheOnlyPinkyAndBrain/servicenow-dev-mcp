@@ -188,7 +188,7 @@ export function registerGrcTools(
       category: z.string().optional().describe("Category"),
       owner: z.string().optional().describe("Owner sys_id"),
       profile: z.string().optional().describe("GRC profile sys_id"),
-      additional_fields: z.record(z.unknown()).optional().describe("Additional fields"),
+      additional_fields: z.record(z.string(), z.unknown()).optional().describe("Additional fields"),
     },
     async ({ name, description, category, owner, profile, additional_fields }) => {
       try {

@@ -163,7 +163,7 @@ export function registerIncidentTools(
       assignment_group: z.string().optional().describe("Assignment group sys_id"),
       assigned_to: z.string().optional().describe("Assigned to user sys_id"),
       cmdb_ci: z.string().optional().describe("Configuration item sys_id"),
-      additional_fields: z.record(z.unknown()).optional().describe("Additional field values"),
+      additional_fields: z.record(z.string(), z.unknown()).optional().describe("Additional field values"),
     },
     async ({ short_description, description, caller_id, category, subcategory, impact, urgency, assignment_group, assigned_to, cmdb_ci, additional_fields }) => {
       try {
@@ -191,7 +191,7 @@ export function registerIncidentTools(
     "Update an existing incident",
     {
       sys_id: z.string().describe("Incident sys_id"),
-      fields: z.record(z.unknown()).describe("Field values to update (e.g., state, assigned_to, work_notes)"),
+      fields: z.record(z.string(), z.unknown()).describe("Field values to update (e.g., state, assigned_to, work_notes)"),
     },
     async ({ sys_id, fields }) => {
       try {

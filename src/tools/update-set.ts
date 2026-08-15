@@ -130,7 +130,7 @@ export function registerUpdateSetTools(
     "Update an existing update set (change state, name, description)",
     {
       sys_id: z.string().describe("The sys_id of the update set to update"),
-      data: z.record(z.unknown()).describe("Field-value pairs to update (e.g. state, name, description)"),
+      data: z.record(z.string(), z.unknown()).describe("Field-value pairs to update (e.g. state, name, description)"),
     },
     async ({ sys_id, data }) => {
       try {

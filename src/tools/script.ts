@@ -181,7 +181,7 @@ export function registerScriptTools(
     {
       type: scriptTypeEnum.describe("Script type to create"),
       data: z
-        .record(z.unknown())
+        .record(z.string(), z.unknown())
         .describe(
           "Field-value pairs for the script (must include 'name' and 'script' at minimum)"
         ),
@@ -207,7 +207,7 @@ export function registerScriptTools(
       type: scriptTypeEnum.describe("Script type"),
       sys_id: z.string().describe("The sys_id of the script to update"),
       data: z
-        .record(z.unknown())
+        .record(z.string(), z.unknown())
         .describe("Field-value pairs to update"),
     },
     async ({ type, sys_id, data }) => {

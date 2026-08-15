@@ -180,7 +180,7 @@ export function registerSecOpsTools(
       subcategory: z.string().optional().describe("Subcategory"),
       priority: z.enum(["1", "2", "3", "4"]).optional().describe("Priority"),
       assignment_group: z.string().optional().describe("Assignment group sys_id"),
-      additional_fields: z.record(z.unknown()).optional().describe("Additional fields"),
+      additional_fields: z.record(z.string(), z.unknown()).optional().describe("Additional fields"),
     },
     async ({ short_description, category, subcategory, priority, assignment_group, additional_fields }) => {
       try {
@@ -202,7 +202,7 @@ export function registerSecOpsTools(
     "Update a security incident",
     {
       sys_id: z.string().describe("Security incident sys_id"),
-      fields: z.record(z.unknown()).describe("Fields to update"),
+      fields: z.record(z.string(), z.unknown()).describe("Fields to update"),
     },
     async ({ sys_id, fields }) => {
       try {

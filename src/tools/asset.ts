@@ -211,7 +211,7 @@ export function registerAssetTools(
       assigned_to: z.string().optional().describe("Assigned to user sys_id"),
       location: z.string().optional().describe("Location sys_id"),
       install_status: z.string().optional().describe("Install status"),
-      additional_fields: z.record(z.unknown()).optional().describe("Additional fields"),
+      additional_fields: z.record(z.string(), z.unknown()).optional().describe("Additional fields"),
     },
     async ({ model, serial_number, asset_tag, assigned_to, location, install_status, additional_fields }) => {
       try {
@@ -234,7 +234,7 @@ export function registerAssetTools(
     "Update an existing asset record",
     {
       sys_id: z.string().describe("Asset sys_id"),
-      fields: z.record(z.unknown()).describe("Fields to update"),
+      fields: z.record(z.string(), z.unknown()).describe("Fields to update"),
     },
     async ({ sys_id, fields }) => {
       try {

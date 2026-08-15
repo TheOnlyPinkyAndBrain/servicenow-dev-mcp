@@ -155,7 +155,7 @@ export function registerCsmTools(
       priority: z.enum(["1", "2", "3", "4"]).optional().describe("Priority"),
       product: z.string().optional().describe("Product sys_id"),
       assignment_group: z.string().optional().describe("Assignment group sys_id"),
-      additional_fields: z.record(z.unknown()).optional().describe("Additional fields"),
+      additional_fields: z.record(z.string(), z.unknown()).optional().describe("Additional fields"),
     },
     async ({ short_description, account, contact, priority, product, assignment_group, additional_fields }) => {
       try {
@@ -178,7 +178,7 @@ export function registerCsmTools(
     "Update a CSM case",
     {
       sys_id: z.string().describe("Case sys_id"),
-      fields: z.record(z.unknown()).describe("Fields to update"),
+      fields: z.record(z.string(), z.unknown()).describe("Fields to update"),
     },
     async ({ sys_id, fields }) => {
       try {

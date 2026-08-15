@@ -92,7 +92,7 @@ export function registerTableTools(
     {
       table: z.string().describe("Table name"),
       data: z
-        .record(z.unknown())
+        .record(z.string(), z.unknown())
         .describe("Field-value pairs for the new record"),
     },
     async ({ table, data }) => {
@@ -115,7 +115,7 @@ export function registerTableTools(
       table: z.string().describe("Table name"),
       sys_id: z.string().describe("The sys_id of the record to update"),
       data: z
-        .record(z.unknown())
+        .record(z.string(), z.unknown())
         .describe("Field-value pairs to update"),
     },
     async ({ table, sys_id, data }) => {

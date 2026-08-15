@@ -185,7 +185,7 @@ export function registerEventManagementTools(
     "Update an alert (acknowledge, assign, close, etc.)",
     {
       sys_id: z.string().describe("Alert sys_id"),
-      fields: z.record(z.unknown()).describe("Fields to update (e.g., acknowledged, state, assignment_group)"),
+      fields: z.record(z.string(), z.unknown()).describe("Fields to update (e.g., acknowledged, state, assignment_group)"),
     },
     async ({ sys_id, fields }) => {
       try {

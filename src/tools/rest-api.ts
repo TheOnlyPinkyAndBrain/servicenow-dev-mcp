@@ -96,7 +96,7 @@ export function registerRestApiTools(
     "sn_rest_api_create",
     "Create a new Scripted REST API definition",
     {
-      data: z.record(z.unknown()).describe("Field-value pairs (name, namespace, short_description, etc.)"),
+      data: z.record(z.string(), z.unknown()).describe("Field-value pairs (name, namespace, short_description, etc.)"),
     },
     async ({ data }) => {
       try {
@@ -112,7 +112,7 @@ export function registerRestApiTools(
     "sn_rest_api_resource_create",
     "Create a new Scripted REST API resource/endpoint",
     {
-      data: z.record(z.unknown()).describe("Field-value pairs (name, http_method, relative_path, operation_script, web_service_definition, etc.)"),
+      data: z.record(z.string(), z.unknown()).describe("Field-value pairs (name, http_method, relative_path, operation_script, web_service_definition, etc.)"),
     },
     async ({ data }) => {
       try {
@@ -129,7 +129,7 @@ export function registerRestApiTools(
     "Update a Scripted REST API resource/endpoint",
     {
       sys_id: z.string().describe("The sys_id of the resource to update"),
-      data: z.record(z.unknown()).describe("Field-value pairs to update"),
+      data: z.record(z.string(), z.unknown()).describe("Field-value pairs to update"),
     },
     async ({ sys_id, data }) => {
       try {

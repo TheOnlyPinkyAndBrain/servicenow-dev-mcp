@@ -43,6 +43,8 @@ export function registerXxxTools(server: McpServer, client: ServiceNowClient, mo
 - Write tools (create/update/delete) are gated behind `mode === "develop"`
 - Queries use ServiceNow encoded query syntax (e.g., `active=true^priority=1`)
 - `sysparm_display_value: "true"` is used where human-readable values help (schema, security, relationships)
+- Numeric params use `z.coerce.number()` (MCP clients may send strings); free-form field maps use `z.record(z.string(), z.unknown())` — zod 4 requires an explicit key type
+- Tool names must be globally unique across all modules (duplicate `server.tool` names crash the server at startup)
 
 ## Build & Run
 
