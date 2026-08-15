@@ -182,7 +182,7 @@ for (const register of registrars) {
 }
 
 console.error(
-  `ServiceNow MCP Server v3.0.0 started (mode: ${config.mode})`
+  `ServiceNow MCP Server v3.1.0 started (mode: ${config.mode})`
 );
 console.error(`Instance: ${config.instanceUrl}`);
 
