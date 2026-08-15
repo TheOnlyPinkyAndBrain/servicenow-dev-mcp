@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServiceNowClient } from "../../client.js";
 import type { Mode } from "../../types.js";
 import { errorResult, jsonResult } from "../../utils.js";
+import { CREATE, READ, UPDATE } from "../../annotations.js";
 
 export function registerIncidentTools(
   server: McpServer,
@@ -26,6 +27,7 @@ export function registerIncidentTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ priority, state, assignment_group, assigned_to, category, caller, opened_after, opened_before, active, query, limit, offset }) => {
       try {
         const qp: string[] = [];
@@ -62,6 +64,7 @@ export function registerIncidentTools(
     {
       sys_id: z.string().describe("Incident sys_id"),
     },
+    READ,
     async ({ sys_id }) => {
       try {
         const [incident, childIncidents, taskSlas, comments] = await Promise.all([
@@ -103,6 +106,7 @@ export function registerIncidentTools(
     {
       sys_id: z.string().describe("Incident sys_id"),
     },
+    READ,
     async ({ sys_id }) => {
       try {
         const result = await client.query("task_ci", {
@@ -126,6 +130,7 @@ export function registerIncidentTools(
       active: z.boolean().optional().describe("Filter by active status (default true)"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
     },
+    READ,
     async ({ state, active, limit }) => {
       try {
         const qp: string[] = ["priorityIN1,2"];
@@ -138,6 +143,40 @@ export function registerIncidentTools(
           sysparm_query: qp.join("^"),
           sysparm_fields: "sys_id,number,short_description,priority,state,major_incident_state,assignment_group,assigned_to,opened_at,business_impact",
           sysparm_limit: limit,
+          sysparm_display_value: "true",
+        });
+        return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_incident_task_list",
+    "List incident tasks (incident_task) — sub-tasks created under an incident for parallel/assigned work.",
+    {
+      incident: z.string().optional().describe("Filter by parent incident sys_id"),
+      state: z.string().optional().describe("Filter by state"),
+      assignment_group: z.string().optional().describe("Filter by assignment group name (contains match)"),
+      query: z.string().optional().describe("Additional encoded query"),
+      limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
+    },
+    READ,
+    async ({ incident, state, assignment_group, query, limit, offset }) => {
+      try {
+        const queryParts: string[] = [];
+        if (incident) queryParts.push(`incident=${incident}`);
+        if (state) queryParts.push(`state=${state}`);
+        if (assignment_group) queryParts.push(`assignment_group.nameLIKE${assignment_group}`);
+        if (query) queryParts.push(query);
+        queryParts.push("ORDERBYDESCsys_created_on");
+        const result = await client.query("incident_task", {
+          sysparm_query: queryParts.join("^"),
+          sysparm_fields: "sys_id,number,incident,state,short_description,assigned_to,assignment_group,sys_created_on,sys_updated_on",
+          sysparm_limit: limit,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
@@ -165,6 +204,7 @@ export function registerIncidentTools(
       cmdb_ci: z.string().optional().describe("Configuration item sys_id"),
       additional_fields: z.record(z.string(), z.unknown()).optional().describe("Additional field values"),
     },
+    CREATE,
     async ({ short_description, description, caller_id, category, subcategory, impact, urgency, assignment_group, assigned_to, cmdb_ci, additional_fields }) => {
       try {
         const body: Record<string, unknown> = { short_description, ...additional_fields };
@@ -193,6 +233,7 @@ export function registerIncidentTools(
       sys_id: z.string().describe("Incident sys_id"),
       fields: z.record(z.string(), z.unknown()).describe("Field values to update (e.g., state, assigned_to, work_notes)"),
     },
+    UPDATE,
     async ({ sys_id, fields }) => {
       try {
         const result = await client.update("incident", sys_id, fields);

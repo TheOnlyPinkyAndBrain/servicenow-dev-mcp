@@ -32,6 +32,9 @@ import { registerChangeTools } from "./it-service-management/change.js";
 import { registerSlaTools } from "./it-service-management/sla.js";
 import { registerApprovalTools } from "./it-service-management/approval.js";
 import { registerCatalogTools } from "./it-service-management/catalog.js";
+import { registerOnCallTools } from "./it-service-management/on-call.js";
+import { registerWalkUpTools } from "./it-service-management/walk-up.js";
+import { registerUniversalRequestTools } from "./it-service-management/universal-request.js";
 
 // Application development (scripting, flow, workflow, CI/CD)
 import { registerScriptTools } from "./application-development/script.js";
@@ -110,6 +113,9 @@ export const registrars: Registrar[] = [
   registerSlaTools,
   registerApprovalTools,
   registerCatalogTools,
+  registerOnCallTools,
+  registerWalkUpTools,
+  registerUniversalRequestTools,
 
   // Application development
   registerScriptTools,

@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServiceNowClient } from "../../client.js";
 import type { Mode } from "../../types.js";
 import { errorResult, jsonResult } from "../../utils.js";
+import { CREATE, READ, UPDATE } from "../../annotations.js";
 
 export function registerProblemTools(
   server: McpServer,
@@ -23,6 +24,7 @@ export function registerProblemTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ priority, state, assignment_group, category, active, known_error, query, limit, offset }) => {
       try {
         const qp: string[] = [];
@@ -55,6 +57,7 @@ export function registerProblemTools(
     {
       sys_id: z.string().describe("Problem sys_id"),
     },
+    READ,
     async ({ sys_id }) => {
       try {
         const [problem, relatedIncidents, problemTasks] = await Promise.all([
@@ -88,6 +91,7 @@ export function registerProblemTools(
       active: z.boolean().optional().describe("Filter by active (default true)"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
     },
+    READ,
     async ({ category, query, active, limit }) => {
       try {
         const qp: string[] = ["known_error=true"];
@@ -101,6 +105,40 @@ export function registerProblemTools(
           sysparm_query: qp.join("^"),
           sysparm_fields: "sys_id,number,short_description,problem_state,category,workaround,cause_notes,fix_notes,assignment_group,sys_updated_on",
           sysparm_limit: limit,
+          sysparm_display_value: "true",
+        });
+        return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_problem_task_list",
+    "List problem tasks (problem_task) — investigation/root-cause sub-tasks under a problem.",
+    {
+      problem: z.string().optional().describe("Filter by parent problem sys_id"),
+      state: z.string().optional().describe("Filter by state"),
+      assignment_group: z.string().optional().describe("Filter by assignment group name (contains match)"),
+      query: z.string().optional().describe("Additional encoded query"),
+      limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
+    },
+    READ,
+    async ({ problem, state, assignment_group, query, limit, offset }) => {
+      try {
+        const queryParts: string[] = [];
+        if (problem) queryParts.push(`problem=${problem}`);
+        if (state) queryParts.push(`state=${state}`);
+        if (assignment_group) queryParts.push(`assignment_group.nameLIKE${assignment_group}`);
+        if (query) queryParts.push(query);
+        queryParts.push("ORDERBYDESCsys_created_on");
+        const result = await client.query("problem_task", {
+          sysparm_query: queryParts.join("^"),
+          sysparm_fields: "sys_id,number,problem,state,short_description,assigned_to,assignment_group,sys_created_on,sys_updated_on",
+          sysparm_limit: limit,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
@@ -125,6 +163,7 @@ export function registerProblemTools(
       first_reported_by_task: z.string().optional().describe("First reported by task sys_id (e.g., incident)"),
       additional_fields: z.record(z.string(), z.unknown()).optional().describe("Additional fields"),
     },
+    CREATE,
     async ({ short_description, description, category, impact, urgency, assignment_group, first_reported_by_task, additional_fields }) => {
       try {
         const body: Record<string, unknown> = { short_description, ...additional_fields };
@@ -149,6 +188,7 @@ export function registerProblemTools(
       sys_id: z.string().describe("Problem sys_id"),
       fields: z.record(z.string(), z.unknown()).describe("Field values to update"),
     },
+    UPDATE,
     async ({ sys_id, fields }) => {
       try {
         const result = await client.update("problem", sys_id, fields);

@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServiceNowClient } from "../../client.js";
 import type { Mode } from "../../types.js";
 import { errorResult, jsonResult } from "../../utils.js";
+import { READ } from "../../annotations.js";
 
 export function registerSlaTools(
   server: McpServer,
@@ -19,6 +20,7 @@ export function registerSlaTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ table, name, active, limit, offset }) => {
       try {
         const queryParts: string[] = [];
@@ -52,6 +54,7 @@ export function registerSlaTools(
     {
       sys_id: z.string().describe("The sys_id of the SLA definition"),
     },
+    READ,
     async ({ sys_id }) => {
       try {
         const record = await client.getById("contract_sla", sys_id);
@@ -74,6 +77,7 @@ export function registerSlaTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ task, sla, stage, has_breached, table, limit, offset }) => {
       try {
         const queryParts: string[] = [];

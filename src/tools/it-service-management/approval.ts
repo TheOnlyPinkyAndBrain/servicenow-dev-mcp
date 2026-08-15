@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServiceNowClient } from "../../client.js";
 import type { Mode } from "../../types.js";
 import { errorResult, jsonResult } from "../../utils.js";
+import { READ, UPDATE } from "../../annotations.js";
 
 export function registerApprovalTools(
   server: McpServer,
@@ -21,6 +22,7 @@ export function registerApprovalTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ state, approver, document_id, source_table, created_after, limit, offset }) => {
       try {
         const qp: string[] = [];
@@ -53,6 +55,7 @@ export function registerApprovalTools(
       source_table: z.string().optional().describe("Filter by source table"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
     },
+    READ,
     async ({ user, source_table, limit }) => {
       try {
         const isId = /^[a-f0-9]{32}$/.test(user);
@@ -82,6 +85,7 @@ export function registerApprovalTools(
     {
       document_id: z.string().describe("Task sys_id"),
     },
+    READ,
     async ({ document_id }) => {
       try {
         const [approvals, groupApprovals] = await Promise.all([
@@ -117,6 +121,7 @@ export function registerApprovalTools(
       active: z.boolean().optional().describe("Active only (within date range)"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
     },
+    READ,
     async ({ delegate, user, active, limit }) => {
       try {
         const qp: string[] = [];
@@ -149,6 +154,7 @@ export function registerApprovalTools(
       source_table: z.string().optional().describe("Filter by source table"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
     },
+    READ,
     async ({ days, source_table, limit }) => {
       try {
         const cutoff = new Date(Date.now() - days * 86400000).toISOString().replace("T", " ").slice(0, 19);
@@ -182,6 +188,7 @@ export function registerApprovalTools(
       state: z.enum(["approved", "rejected"]).describe("New state"),
       comments: z.string().optional().describe("Approval comments"),
     },
+    UPDATE,
     async ({ sys_id, state, comments }) => {
       try {
         const body: Record<string, unknown> = { state };

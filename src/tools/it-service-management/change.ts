@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServiceNowClient } from "../../client.js";
 import type { Mode } from "../../types.js";
 import { errorResult, jsonResult } from "../../utils.js";
+import { ACTION, CREATE, READ, UPDATE } from "../../annotations.js";
 
 export function registerChangeTools(
   server: McpServer,
@@ -25,6 +26,7 @@ export function registerChangeTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ type, state, risk, assignment_group, category, start_after, start_before, active, query, limit, offset }) => {
       try {
         const qp: string[] = [];
@@ -59,6 +61,7 @@ export function registerChangeTools(
     {
       sys_id: z.string().describe("Change request sys_id"),
     },
+    READ,
     async ({ sys_id }) => {
       try {
         const [change, changeTasks, affectedCIs, approvals, conflicts] = await Promise.all([
@@ -111,6 +114,7 @@ export function registerChangeTools(
       assignment_group: z.string().optional().describe("Assignment group name (contains match)"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
     },
+    READ,
     async ({ change_request, state, change_task_type, assignment_group, limit }) => {
       try {
         const qp: string[] = [];
@@ -141,6 +145,7 @@ export function registerChangeTools(
       category: z.string().optional().describe("Category filter"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
     },
+    READ,
     async ({ active, category, limit }) => {
       try {
         const qp: string[] = [];
@@ -153,6 +158,94 @@ export function registerChangeTools(
           sysparm_query: qp.join("^"),
           sysparm_fields: "sys_id,name,short_description,category,template_value,active,sys_updated_on",
           sysparm_limit: limit,
+          sysparm_display_value: "true",
+        });
+        return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_change_model_list",
+    "List change models (chg_model) — the model-driven definitions that govern change types (normal, standard, emergency, and custom). Modern change management is model-based; use this to discover available models before creating a change.",
+    {
+      name: z.string().optional().describe("Filter by model name (contains match)"),
+      active: z.boolean().optional().describe("Filter by active status"),
+      limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
+    },
+    READ,
+    async ({ name, active, limit, offset }) => {
+      try {
+        const queryParts: string[] = [];
+        if (name) queryParts.push(`nameLIKE${name}`);
+        if (active !== undefined) queryParts.push(`active=${active}`);
+        queryParts.push("ORDERBYname");
+        const result = await client.query("chg_model", {
+          sysparm_query: queryParts.join("^"),
+          sysparm_fields: "sys_id,name,description,active,change_type,default_model,sys_updated_on",
+          sysparm_limit: limit,
+          sysparm_offset: offset,
+          sysparm_display_value: "true",
+        });
+        return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_cab_meeting_list",
+    "List Change Advisory Board (CAB) meetings (cab_meeting). Shows scheduled/held CAB meetings for reviewing changes.",
+    {
+      state: z.string().optional().describe("Filter by state (e.g. 'scheduled', 'in_progress', 'complete')"),
+      query: z.string().optional().describe("Additional encoded query"),
+      limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
+    },
+    READ,
+    async ({ state, query, limit, offset }) => {
+      try {
+        const queryParts: string[] = [];
+        if (state) queryParts.push(`state=${state}`);
+        if (query) queryParts.push(query);
+        queryParts.push("ORDERBYDESCsys_created_on");
+        const result = await client.query("cab_meeting", {
+          sysparm_query: queryParts.join("^"),
+          sysparm_fields: "sys_id,number,name,state,cab_definition,start_date_time,end_date_time,chair,sys_updated_on",
+          sysparm_limit: limit,
+          sysparm_offset: offset,
+          sysparm_display_value: "true",
+        });
+        return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_cab_agenda_list",
+    "List CAB meeting agenda items (cab_agenda_item) — the changes queued for review at a CAB meeting.",
+    {
+      cab_meeting: z.string().optional().describe("Filter by CAB meeting sys_id"),
+      limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 50)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
+    },
+    READ,
+    async ({ cab_meeting, limit, offset }) => {
+      try {
+        const queryParts: string[] = [];
+        if (cab_meeting) queryParts.push(`cab_meeting=${cab_meeting}`);
+        queryParts.push("ORDERBYorder");
+        const result = await client.query("cab_agenda_item", {
+          sysparm_query: queryParts.join("^"),
+          sysparm_fields: "sys_id,cab_meeting,task,order,state,decision,sys_updated_on",
+          sysparm_limit: limit ?? 50,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
@@ -180,6 +273,7 @@ export function registerChangeTools(
       template_id: z.string().optional().describe("Standard change template sys_id (required for standard type)"),
       additional_fields: z.record(z.string(), z.unknown()).optional().describe("Additional fields"),
     },
+    CREATE,
     async ({ type, short_description, description, assignment_group, category, risk, impact, start_date, end_date, template_id, additional_fields }) => {
       try {
         const body: Record<string, unknown> = { short_description, ...additional_fields };
@@ -215,9 +309,60 @@ export function registerChangeTools(
       sys_id: z.string().describe("Change request sys_id"),
       fields: z.record(z.string(), z.unknown()).describe("Field values to update"),
     },
+    UPDATE,
     async ({ sys_id, fields }) => {
       try {
         const result = await client.update("change_request", sys_id, fields);
+        return jsonResult(result);
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_change_task_create",
+    "Create a change task (change_task) under a change request.",
+    {
+      change_request: z.string().describe("Parent change request sys_id"),
+      short_description: z.string().describe("Short description of the task"),
+      change_task_type: z.string().optional().describe("Task type (e.g. 'planning', 'implementation', 'testing', 'review')"),
+      assignment_group: z.string().optional().describe("Assignment group sys_id"),
+      assigned_to: z.string().optional().describe("Assignee sys_id"),
+      additional_fields: z.record(z.string(), z.unknown()).optional().describe("Additional field values"),
+    },
+    CREATE,
+    async ({ change_request, short_description, change_task_type, assignment_group, assigned_to, additional_fields }) => {
+      try {
+        const body: Record<string, unknown> = {
+          change_request,
+          short_description,
+          ...(change_task_type ? { change_task_type } : {}),
+          ...(assignment_group ? { assignment_group } : {}),
+          ...(assigned_to ? { assigned_to } : {}),
+          ...additional_fields,
+        };
+        const result = await client.create("change_task", body);
+        return jsonResult(result);
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_change_conflict_check",
+    "Run conflict detection for a change request via the Change Management API (POST /api/sn_chg_rest/change/{sys_id}/conflict). Recomputes scheduling/CI conflicts and returns them — better than reading stale change_conflict rows.",
+    {
+      sys_id: z.string().describe("Change request sys_id to check for conflicts"),
+    },
+    ACTION,
+    async ({ sys_id }) => {
+      try {
+        const result = await client.restApi(
+          "POST",
+          `/api/sn_chg_rest/change/${encodeURIComponent(sys_id)}/conflict`
+        );
         return jsonResult(result);
       } catch (error) {
         return errorResult(error);

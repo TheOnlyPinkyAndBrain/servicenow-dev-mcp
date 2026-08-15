@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A comprehensive MCP (Model Context Protocol) server that gives AI assistants expert-level access to any ServiceNow module. **307 tools across 44 modules.** Connects to a ServiceNow instance via Basic Auth and provides tools for debugging, inspecting configuration, and building features across the entire platform.
+A comprehensive MCP (Model Context Protocol) server that gives AI assistants expert-level access to any ServiceNow module. **320 tools across 47 modules.** Connects to a ServiceNow instance via Basic Auth and provides tools for debugging, inspecting configuration, and building features across the entire platform.
 
 ## Modules
 
@@ -10,7 +10,7 @@ Tools are organized into folders named after ServiceNow product modules (matchin
 
 | ServiceNow module | Folder | Tools | Details |
 |-------------------|--------|------:|---------|
-| IT Service Management (ITSM) | `it-service-management` | 38 | [README](src/tools/it-service-management/README.md) |
+| IT Service Management (ITSM) | `it-service-management` | 51 | [README](src/tools/it-service-management/README.md) |
 | Now Platform (core) | `now-platform` | 71 | [README](src/tools/now-platform/README.md) |
 | Source-to-Pay Operations | `source-to-pay-operations` | 58 | [README](src/tools/source-to-pay-operations/README.md) |
 | ServiceNow Platform (CMDB, Knowledge) | `servicenow-platform` | 27 | [README](src/tools/servicenow-platform/README.md) |
@@ -26,7 +26,7 @@ Tools are organized into folders named after ServiceNow product modules (matchin
 | Governance, Risk & Compliance (GRC) | `governance-risk-compliance` | 6 | [README](src/tools/governance-risk-compliance/README.md) |
 | Platform Analytics | `now-intelligence` | 4 | [README](src/tools/now-intelligence/README.md) |
 
-_44 tool modules · 307 tools across 15 ServiceNow module folders._
+_47 tool modules · 320 tools across 15 ServiceNow module folders._
 
 ## Capabilities
 
