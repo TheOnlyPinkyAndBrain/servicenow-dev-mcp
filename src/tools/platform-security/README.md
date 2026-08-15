@@ -1,0 +1,22 @@
+# Platform Security
+
+ACLs, roles, and access control.
+
+**Module folder:** `src/tools/platform-security/` · **Files:** 1 · **Tools:** 8
+
+Read-only tools (`both`) work in `debug` and `develop` modes; `develop` tools require `SERVICENOW_MODE=develop`.
+
+| Tool | Mode | Description |
+|------|------|-------------|
+| `sn_group_list` | both | List ServiceNow groups (sys_user_group). Search by name, type, or manager. |
+| `sn_group_members` | both | List members of a group (sys_user_grmember) |
+| `sn_group_roles` | both | List roles assigned to a group (sys_group_has_role) |
+| `sn_role_contains` | both | List roles contained within a role (sys_user_role_contains). Shows role inheritance hierarchy. |
+| `sn_role_list` | both | List roles (sys_user_role). Shows role name, description, and elevated privilege status. |
+| `sn_user_groups` | both | List groups a user belongs to (sys_user_grmember). Useful for debugging assignment and access. |
+| `sn_user_list` | both | List ServiceNow users (sys_user). Search by name, email, role, or group membership. |
+| `sn_user_roles` | both | List roles assigned to a user (sys_user_has_role). Essential for debugging access/permission issues. |
+
+---
+
+↩ Back to the [main README](../../../README.md#modules).

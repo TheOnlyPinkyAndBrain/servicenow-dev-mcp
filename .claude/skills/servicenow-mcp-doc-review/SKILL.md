@@ -26,20 +26,23 @@ Never recommend adding a tool for an API the instance doesn't have, or that alre
 
 The current inventory (confirm before every audit — do not trust these numbers blind):
 
+Tool modules live in `src/tools/<servicenow-module>/*.ts` (folders named after ServiceNow product modules — `it-service-management/`, `now-platform/`, etc.), so all inventory commands recurse.
+
 ```bash
-echo "Modules: $(ls src/tools/*.ts | wc -l | tr -d ' ')"
-echo "Tools:   $(grep -rho 'server.tool(' src/tools/*.ts | wc -l | tr -d ' ')"
-echo "--- tools per module ---"
-for f in src/tools/*.ts; do printf '%3d  %s\n' "$(grep -c 'server.tool(' "$f")" "$(basename "$f" .ts)"; done | sort -rn
+echo "Modules (files): $(find src/tools -name '*.ts' | wc -l | tr -d ' ')"
+echo "Module folders:  $(find src/tools -mindepth 1 -type d | wc -l | tr -d ' ')"
+echo "Tools:           $(grep -rho 'server.tool(' src/tools | wc -l | tr -d ' ')"
+echo "--- tools per module folder ---"
+for d in src/tools/*/; do printf '%3d  %s\n' "$(grep -rho 'server.tool(' "$d" | wc -l | tr -d ' ')" "$(basename "$d")"; done | sort -rn
 ```
 
 To see every tool name + its one-line description (this is your coverage map):
 
 ```bash
-grep -rhoE 'server\.tool\(\s*"[^"]+",\s*"[^"]+"' src/tools/*.ts \
+grep -rhoE 'server\.tool\(\s*"[^"]+",\s*"[^"]+"' src/tools \
   | sed -E 's/server\.tool\(\s*//' | sort
 # If tool name and description sit on separate lines, fall back to:
-grep -rhoE '"sn_[a-z0-9_]+"' src/tools/*.ts | sort -u
+grep -rhoE '"sn_[a-z0-9_]+"' src/tools | sort -u
 ```
 
 Registration lives in `src/index.ts` (the `registrars` array). A new module is only live
@@ -82,16 +85,41 @@ scoped apps that have **no corresponding tool module**.
 
 ## Step 2 — Review ServiceNow documentation
 
-Use `WebSearch` and `WebFetch` to pull the *current* platform capabilities. Anchor searches
-to the instance's release (from Step 1) so you don't recommend features it can't run, or miss
-new ones it can. Authoritative sources, in priority order:
+**Primary source — local docs (offline, authoritative, no rate limits):**
+A full clone of the official ServiceNow AI Platform docs lives at
+`/Users/sukhmal/code/ServiceNow/ServiceNowDocs`. Prefer this over the web.
 
-1. **REST API reference** — `developer.servicenow.com/dev.do#!/reference/api/latest/rest`
-   The definitive list of Now Platform APIs. This is your master checklist for API coverage.
-2. **Product docs** — `docs.servicenow.com` (per module: ITSM, CMDB, CSM, HRSD, ITOM, GRC/IRM,
-   SecOps, ITAM, Now Assist, etc.). Use for capabilities the MCP exposes as table queries.
-3. **Developer portal / release notes** — for the instance's named release: what's **new**
-   (candidate additions) and what's **deprecated** (candidate removals/rewrites).
+```bash
+DOCS=/Users/sukhmal/code/ServiceNow/ServiceNowDocs
+ls "$DOCS/markdown"                       # module taxonomy (matches our tool folders)
+cat "$DOCS/llms.txt"                      # AI-oriented index of the whole doc set
+cat "$DOCS/README.md" | grep -i release   # which release family this clone is (e.g. Australia)
+
+# REST API reference — the master checklist for API coverage
+ls "$DOCS/markdown/api-reference"
+grep -rl -i 'rest api' "$DOCS/markdown/api-reference" | head
+
+# Per-module capabilities — the folder names map 1:1 to our src/tools folders
+ls "$DOCS/markdown/it-service-management"      # ITSM
+ls "$DOCS/markdown/servicenow-platform"        # CMDB, Knowledge, core platform
+ls "$DOCS/markdown/source-to-pay-operations"   # S2P
+# Release deltas (new/changed capabilities) — candidate additions/deprecations
+ls "$DOCS/markdown" | grep '^delta-'
+```
+
+Start from `llms.txt` — it is ServiceNow's own AI index: it lists every publication (folder)
+with a link, states the release **family** (the clone tracks the latest, currently
+**"australia"**, post-Zurich), and notes each publication has an `index.md` listing its files.
+The `markdown/` publication names map to this MCP's `src/tools/` module folders — audit a
+module by diffing its doc publication against its tool folder.
+
+**Fallback — web.** Per `llms.txt`: **do NOT fetch `servicenow.com/docs`** — it is a
+JavaScript SPA and returns no readable content to LLMs (this is why direct doc fetches fail).
+Instead fetch the raw markdown of another release family with `WebFetch`:
+`https://raw.githubusercontent.com/ServiceNow/ServiceNowDocs/{branch}/markdown/{publication}/{file}`
+(branch = `australia` | `zurich` | `yokohama` | `xanadu`; start at `.../{publication}/index.md`).
+Use `WebSearch` only to discover topic names, then fetch the raw markdown. Anchor to the
+instance's release (Step 1); check `$DOCS/README.md` / `llms.txt` for the clone's family.
 
 Suggested searches (adapt to the focus argument if one was given):
 
@@ -123,16 +151,16 @@ Concrete gap-hunting checks:
 
 ```bash
 # Which active-plugin scopes have NO matching tool module?
-# (Compare Step-1 scope list against src/tools/*.ts names by hand or with comm.)
+# (Compare Step-1 scope list against the src/tools/<module> folders by hand or with comm.)
 
 # Does a "get" tool fetch related records, or leave the user to chase them?
-grep -L 'Promise.all' src/tools/*.ts   # modules with no parallel related-record fetch
+grep -rL 'Promise.all' src/tools --include='*.ts'   # modules with no parallel related-record fetch
 
 # Which tools expose paging/filtering vs. hard-coded limits?
-grep -Ln 'sysparm_offset|offset' src/tools/*.ts   # tools missing pagination
+grep -rLn 'sysparm_offset|offset' src/tools --include='*.ts'   # tools missing pagination
 
 # Read-only-only modules (no develop-mode write tools) — is that intentional?
-grep -L 'mode !== "develop"' src/tools/*.ts
+grep -rL 'mode !== "develop"' src/tools --include='*.ts'
 ```
 
 For each candidate gap, **verify against the live instance** before recommending it (Step-1

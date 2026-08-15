@@ -4,86 +4,86 @@ import { loadConfig } from "./config.js";
 import { ServiceNowClient } from "./client.js";
 
 // Core platform tools
-import { registerTableTools } from "./tools/table.js";
-import { registerLogTools } from "./tools/logs.js";
-import { registerSchemaTools } from "./tools/schema.js";
-import { registerSystemTools } from "./tools/system.js";
-import { registerSecurityTools } from "./tools/security.js";
-import { registerUiTools } from "./tools/ui.js";
-import { registerUpdateSetTools } from "./tools/update-set.js";
-import { registerExecuteTools } from "./tools/execute.js";
-import { registerDataPolicyTools } from "./tools/data-policy.js";
-import { registerAttachmentTools } from "./tools/attachment.js";
-import { registerBatchTools } from "./tools/batch.js";
+import { registerTableTools } from "./tools/now-platform/table.js";
+import { registerLogTools } from "./tools/now-platform/logs.js";
+import { registerSchemaTools } from "./tools/now-platform/schema.js";
+import { registerSystemTools } from "./tools/now-platform/system.js";
+import { registerSecurityTools } from "./tools/platform-security/security.js";
+import { registerUiTools } from "./tools/platform-user-interface/ui.js";
+import { registerUpdateSetTools } from "./tools/now-platform/update-set.js";
+import { registerExecuteTools } from "./tools/now-platform/execute.js";
+import { registerDataPolicyTools } from "./tools/now-platform/data-policy.js";
+import { registerAttachmentTools } from "./tools/now-platform/attachment.js";
+import { registerBatchTools } from "./tools/now-platform/batch.js";
 
 // ITSM tools
-import { registerIncidentTools } from "./tools/incident.js";
-import { registerProblemTools } from "./tools/problem.js";
-import { registerChangeTools } from "./tools/change.js";
-import { registerSlaTools } from "./tools/sla.js";
-import { registerApprovalTools } from "./tools/approval.js";
+import { registerIncidentTools } from "./tools/it-service-management/incident.js";
+import { registerProblemTools } from "./tools/it-service-management/problem.js";
+import { registerChangeTools } from "./tools/it-service-management/change.js";
+import { registerSlaTools } from "./tools/it-service-management/sla.js";
+import { registerApprovalTools } from "./tools/it-service-management/approval.js";
 
 // Scripting & automation tools
-import { registerScriptTools } from "./tools/script.js";
-import { registerFlowTools } from "./tools/flow.js";
-import { registerWorkflowTools } from "./tools/workflow.js";
+import { registerScriptTools } from "./tools/application-development/script.js";
+import { registerFlowTools } from "./tools/application-development/flow.js";
+import { registerWorkflowTools } from "./tools/application-development/workflow.js";
 
 // Service catalog tools
-import { registerCatalogTools } from "./tools/catalog.js";
+import { registerCatalogTools } from "./tools/it-service-management/catalog.js";
 
 // Knowledge management tools
-import { registerKnowledgeTools } from "./tools/knowledge.js";
+import { registerKnowledgeTools } from "./tools/servicenow-platform/knowledge.js";
 
 // CMDB tools
-import { registerConfigItemTools } from "./tools/config-items.js";
-import { registerCmdbTools } from "./tools/cmdb.js";
+import { registerConfigItemTools } from "./tools/servicenow-platform/config-items.js";
+import { registerCmdbTools } from "./tools/servicenow-platform/cmdb.js";
 
 // ITAM tools
-import { registerAssetTools } from "./tools/asset.js";
+import { registerAssetTools } from "./tools/it-asset-management/asset.js";
 
 // ITOM tools
-import { registerEventManagementTools } from "./tools/event-management.js";
+import { registerEventManagementTools } from "./tools/it-operations-management/event-management.js";
 
 // CSM tools
-import { registerCsmTools } from "./tools/csm.js";
+import { registerCsmTools } from "./tools/customer-service-management/csm.js";
 
 // HRSD tools
-import { registerHrsdTools } from "./tools/hrsd.js";
+import { registerHrsdTools } from "./tools/employee-service-management/hrsd.js";
 
 // SecOps tools
-import { registerSecOpsTools } from "./tools/secops.js";
+import { registerSecOpsTools } from "./tools/security-management/secops.js";
 
 // GRC tools
-import { registerGrcTools } from "./tools/grc.js";
+import { registerGrcTools } from "./tools/governance-risk-compliance/grc.js";
 
 // Performance Analytics tools
-import { registerPerformanceAnalyticsTools } from "./tools/performance-analytics.js";
+import { registerPerformanceAnalyticsTools } from "./tools/now-intelligence/performance-analytics.js";
 
 // CI/CD & ATF tools
-import { registerCicdTools } from "./tools/cicd.js";
+import { registerCicdTools } from "./tools/application-development/cicd.js";
 
 // Service Portal tools
-import { registerServicePortalTools } from "./tools/service-portal.js";
+import { registerServicePortalTools } from "./tools/platform-user-interface/service-portal.js";
 
 // Integration & middleware tools
-import { registerRestApiTools } from "./tools/rest-api.js";
-import { registerImportSetTools } from "./tools/import-set.js";
-import { registerNotificationTools } from "./tools/notification.js";
-import { registerIntegrationTools } from "./tools/integration.js";
+import { registerRestApiTools } from "./tools/integrate-applications/rest-api.js";
+import { registerImportSetTools } from "./tools/integrate-applications/import-set.js";
+import { registerNotificationTools } from "./tools/now-platform/notification.js";
+import { registerIntegrationTools } from "./tools/integrate-applications/integration.js";
 
 // Procurement & S2P tools
-import { registerProcurementTools } from "./tools/procurement.js";
-import { registerS2pTools } from "./tools/s2p.js";
+import { registerProcurementTools } from "./tools/source-to-pay-operations/procurement.js";
+import { registerS2pTools } from "./tools/source-to-pay-operations/s2p.js";
 
 // Diagnostics & debugging tools
-import { registerDiagnosticsTools } from "./tools/diagnostics.js";
-import { registerScheduledJobTools } from "./tools/scheduled-job.js";
-import { registerEmailTools } from "./tools/email.js";
+import { registerDiagnosticsTools } from "./tools/now-platform/diagnostics.js";
+import { registerScheduledJobTools } from "./tools/now-platform/scheduled-job.js";
+import { registerEmailTools } from "./tools/now-platform/email.js";
 
 // Platform administration tools
-import { registerDomainTools } from "./tools/domain.js";
-import { registerScopeTools } from "./tools/scope.js";
-import { registerUpgradeTools } from "./tools/upgrade.js";
+import { registerDomainTools } from "./tools/now-platform/domain.js";
+import { registerScopeTools } from "./tools/now-platform/scope.js";
+import { registerUpgradeTools } from "./tools/now-platform/upgrade.js";
 
 const config = loadConfig();
 const client = new ServiceNowClient(config);
