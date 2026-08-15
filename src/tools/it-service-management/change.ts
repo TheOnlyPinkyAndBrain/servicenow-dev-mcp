@@ -185,7 +185,7 @@ export function registerChangeTools(
         queryParts.push("ORDERBYname");
         const result = await client.query("chg_model", {
           sysparm_query: queryParts.join("^"),
-          sysparm_fields: "sys_id,name,description,active,change_type,default_model,sys_updated_on",
+          sysparm_fields: "sys_id,name,description,active,default_change_model,itil_change_process,table_name,sys_updated_on",
           sysparm_limit: limit,
           sysparm_offset: offset,
           sysparm_display_value: "true",
@@ -215,7 +215,7 @@ export function registerChangeTools(
         queryParts.push("ORDERBYDESCsys_created_on");
         const result = await client.query("cab_meeting", {
           sysparm_query: queryParts.join("^"),
-          sysparm_fields: "sys_id,number,name,state,cab_definition,start_date_time,end_date_time,chair,sys_updated_on",
+          sysparm_fields: "sys_id,name,state,cab_definition,manager,organizer,start,end,agenda_locked,sys_updated_on",
           sysparm_limit: limit,
           sysparm_offset: offset,
           sysparm_display_value: "true",
