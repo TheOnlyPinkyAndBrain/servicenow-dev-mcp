@@ -31,7 +31,7 @@ export function registerWalkUpTools(
         queryParts.push("ORDERBYnumber");
         const result = await client.query("wu_location_queue", {
           sysparm_query: queryParts.join("^"),
-          sysparm_fields: "sys_id,number,location,queue,active,sys_updated_on",
+          sysparm_fields: "sys_id,number,name,location,active,short_description,average_wait_time,sys_updated_on",
           sysparm_limit: limit,
           sysparm_offset: offset,
           sysparm_display_value: "true",

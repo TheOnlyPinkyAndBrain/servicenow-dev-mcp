@@ -31,7 +31,7 @@ export function registerOnCallTools(
         queryParts.push("ORDERBYname");
         const result = await client.query("cmn_rota", {
           sysparm_query: queryParts.join("^"),
-          sysparm_fields: "sys_id,name,group,active,rotation_start_date,time_zone,sys_updated_on",
+          sysparm_fields: "sys_id,name,group,active,state,schedule,coverage_interval,sys_updated_on",
           sysparm_limit: limit,
           sysparm_offset: offset,
           sysparm_display_value: "true",
@@ -61,7 +61,7 @@ export function registerOnCallTools(
         queryParts.push("ORDERBYorder");
         const result = await client.query("cmn_rota_member", {
           sysparm_query: queryParts.join("^"),
-          sysparm_fields: "sys_id,member,roster,order,sys_updated_on",
+          sysparm_fields: "sys_id,member,roster,order,from,to,rotation_schedule,sys_updated_on",
           sysparm_limit: limit ?? 50,
           sysparm_offset: offset,
           sysparm_display_value: "true",
