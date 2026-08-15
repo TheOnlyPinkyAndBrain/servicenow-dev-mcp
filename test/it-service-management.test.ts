@@ -10,6 +10,7 @@ import { registerOnCallTools } from "../src/tools/it-service-management/on-call.
 import { registerWalkUpTools } from "../src/tools/it-service-management/walk-up.js";
 import { registerUniversalRequestTools } from "../src/tools/it-service-management/universal-request.js";
 import { registerCimTools } from "../src/tools/it-service-management/continual-improvement.js";
+import { registerOutageTools } from "../src/tools/it-service-management/outage.js";
 
 type Call = [string, ...unknown[]];
 interface Tool {
@@ -81,6 +82,7 @@ const ALL = [
   registerWalkUpTools,
   registerUniversalRequestTools,
   registerCimTools,
+  registerOutageTools,
 ];
 
 describe("ITSM tool routing (develop mode)", () => {
@@ -190,6 +192,15 @@ describe("ITSM tool routing (develop mode)", () => {
     expect(g.client.calls).toContainEqual(["getById", "sn_cim_register", "cim1"]);
     const getTables = g.client.calls.filter((c) => c[0] === "query").map((c) => c[1]);
     expect(getTables).toEqual(expect.arrayContaining(["sn_cim_task", "sn_cim_related_kpi"]));
+  });
+
+  it("outage tools route to cmdb_ci_outage", async () => {
+    const { tools, client } = register("develop");
+    await tools.get("sn_outage_list")!.handler({});
+    expect(client.calls.find((c) => c[0] === "query")?.[1]).toBe("cmdb_ci_outage");
+    const g = register("develop");
+    await g.tools.get("sn_outage_get")!.handler({ sys_id: "o1" });
+    expect(g.client.calls).toContainEqual(["getById", "cmdb_ci_outage", "o1"]);
   });
 
   it("row-7 tools query their plugin tables", async () => {

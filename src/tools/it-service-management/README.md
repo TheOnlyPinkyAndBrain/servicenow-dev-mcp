@@ -2,7 +2,7 @@
 
 Incident, problem, change, SLA, and approval management.
 
-**Module folder:** `src/tools/it-service-management/` · **Files:** 10 · **Tools:** 54
+**Module folder:** `src/tools/it-service-management/` · **Files:** 11 · **Tools:** 56
 
 Read-only tools (`both`) work in `debug` and `develop` modes; `develop` tools require `SERVICENOW_MODE=develop`.
 
@@ -48,6 +48,8 @@ Read-only tools (`both`) work in `debug` and `develop` modes; `develop` tools re
 | `sn_known_error_list` | both | List known errors — problems flagged as known_error=true with workarounds |
 | `sn_oncall_member_list` | both | List on-call rotation members (cmn_rota_member) — the users assigned into an on-call rotation's rosters. Requires the On-Call Scheduling plugin. |
 | `sn_oncall_rota_list` | both | List on-call rotations (cmn_rota) — recurring on-call schedules attached to assignment groups. Requires the On-Call Scheduling plugin. |
+| `sn_outage_get` | both | Get full outage details (cmdb_ci_outage) by sys_id, including the outage message and details. |
+| `sn_outage_list` | both | List outages (cmdb_ci_outage) — recorded CI outages/degradations with begin/end windows, optionally tied to an incident or change. |
 | `sn_problem_create` | develop | Create a new problem record |
 | `sn_problem_get` | both | Get full problem details including related incidents and problem tasks |
 | `sn_problem_list` | both | List problems with filters for priority, state, assignment group, category |

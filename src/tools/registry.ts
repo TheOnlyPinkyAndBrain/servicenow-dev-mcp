@@ -38,6 +38,7 @@ import { registerOnCallTools } from "./it-service-management/on-call.js";
 import { registerWalkUpTools } from "./it-service-management/walk-up.js";
 import { registerUniversalRequestTools } from "./it-service-management/universal-request.js";
 import { registerCimTools } from "./it-service-management/continual-improvement.js";
+import { registerOutageTools } from "./it-service-management/outage.js";
 
 // Application development (scripting, flow, workflow, CI/CD)
 import { registerScriptTools } from "./application-development/script.js";
@@ -123,6 +124,7 @@ export const registrars: Registrar[] = [
   registerWalkUpTools,
   registerUniversalRequestTools,
   registerCimTools,
+  registerOutageTools,
 
   // Application development
   registerScriptTools,
