@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServiceNowClient } from "../../client.js";
 import type { Mode } from "../../types.js";
 import { errorResult, jsonResult } from "../../utils.js";
+import { READ } from "../../annotations.js";
 
 export function registerPerformanceAnalyticsTools(
   server: McpServer,
@@ -20,6 +21,7 @@ export function registerPerformanceAnalyticsTools(
       display_value: z.boolean().optional().describe("Return formatted values (default true)"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Limit results per page"),
     },
+    READ,
     async ({ indicator_sys_id, breakdown, sort_by, sort_dir, display_value, limit }) => {
       try {
         const params = new URLSearchParams();
@@ -48,6 +50,7 @@ export function registerPerformanceAnalyticsTools(
       active: z.boolean().optional().describe("Active status (default true)"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
     },
+    READ,
     async ({ name, frequency, active, limit }) => {
       try {
         const qp: string[] = [];
@@ -78,6 +81,7 @@ export function registerPerformanceAnalyticsTools(
       active: z.boolean().optional().describe("Active status (default true)"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
     },
+    READ,
     async ({ name, active, limit }) => {
       try {
         const qp: string[] = [];
@@ -107,6 +111,7 @@ export function registerPerformanceAnalyticsTools(
       active: z.boolean().optional().describe("Active status"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
     },
+    READ,
     async ({ name, active, limit }) => {
       try {
         const qp: string[] = [];
@@ -118,6 +123,104 @@ export function registerPerformanceAnalyticsTools(
           sysparm_query: qp.join("^"),
           sysparm_fields: "sys_id,name,description,owner,active,sys_updated_on",
           sysparm_limit: limit,
+          sysparm_display_value: "true",
+        });
+        return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_pa_widget_list",
+    "List Performance Analytics widgets (pa_widgets) — the visualizations (scorecards, charts, dials) placed on PA dashboards, tied to an indicator and optional breakdown.",
+    {
+      name: z.string().optional().describe("Filter by name (contains match)"),
+      indicator: z.string().optional().describe("Filter by indicator sys_id"),
+      type: z.string().optional().describe("Filter by widget type"),
+      query: z.string().optional().describe("Additional encoded query"),
+      limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
+    },
+    READ,
+    async ({ name, indicator, type, query, limit, offset }) => {
+      try {
+        const qp: string[] = [];
+        if (name) qp.push(`nameLIKE${name}`);
+        if (indicator) qp.push(`indicator=${indicator}`);
+        if (type) qp.push(`type=${type}`);
+        if (query) qp.push(query);
+        qp.push("ORDERBYname");
+        const result = await client.query("pa_widgets", {
+          sysparm_query: qp.join("^"),
+          sysparm_fields: "sys_id,name,type,indicator,breakdown,visualization,description,sys_updated_on",
+          sysparm_limit: limit,
+          sysparm_offset: offset,
+          sysparm_display_value: "true",
+        });
+        return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_pa_target_list",
+    "List Performance Analytics targets (pa_targets) — goal values set for an indicator (optionally per element/breakdown).",
+    {
+      indicator: z.string().optional().describe("Filter by indicator sys_id"),
+      active: z.boolean().optional().describe("Filter by active status"),
+      query: z.string().optional().describe("Additional encoded query"),
+      limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
+    },
+    READ,
+    async ({ indicator, active, query, limit, offset }) => {
+      try {
+        const qp: string[] = [];
+        if (indicator) qp.push(`indicator=${indicator}`);
+        if (active !== undefined) qp.push(`active=${active}`);
+        if (query) qp.push(query);
+        qp.push("ORDERBYDESCsys_updated_on");
+        const result = await client.query("pa_targets", {
+          sysparm_query: qp.join("^"),
+          sysparm_fields: "sys_id,display_name,indicator,element,breakdown,active,owner,sys_updated_on",
+          sysparm_limit: limit,
+          sysparm_offset: offset,
+          sysparm_display_value: "true",
+        });
+        return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_pa_threshold_list",
+    "List Performance Analytics thresholds (pa_thresholds) — conditional score bands that trigger colors/notes when an indicator crosses a value.",
+    {
+      indicator: z.string().optional().describe("Filter by indicator sys_id"),
+      active: z.boolean().optional().describe("Filter by active status"),
+      query: z.string().optional().describe("Additional encoded query"),
+      limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
+    },
+    READ,
+    async ({ indicator, active, query, limit, offset }) => {
+      try {
+        const qp: string[] = [];
+        if (indicator) qp.push(`indicator=${indicator}`);
+        if (active !== undefined) qp.push(`active=${active}`);
+        if (query) qp.push(query);
+        qp.push("ORDERBYindicator");
+        const result = await client.query("pa_thresholds", {
+          sysparm_query: qp.join("^"),
+          sysparm_fields: "sys_id,indicator,condition,value,display,active,sys_updated_on",
+          sysparm_limit: limit,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
