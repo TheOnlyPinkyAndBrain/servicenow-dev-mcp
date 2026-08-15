@@ -17,8 +17,9 @@ export function registerSlaTools(
       name: z.string().optional().describe("Filter by SLA name (contains match)"),
       active: z.boolean().optional().describe("Filter by active status"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ table, name, active, limit }) => {
+    async ({ table, name, active, limit, offset }) => {
       try {
         const queryParts: string[] = [];
         if (table) queryParts.push(`collection=${table}`);
@@ -30,6 +31,7 @@ export function registerSlaTools(
           sysparm_query: queryParts.join("^"),
           sysparm_fields: "sys_id,name,collection,duration,active,start_condition,stop_condition,pause_condition,retroactive,sys_updated_on",
           sysparm_limit: limit,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
 
@@ -70,8 +72,9 @@ export function registerSlaTools(
       has_breached: z.boolean().optional().describe("Filter by breached status"),
       table: z.string().optional().describe("Filter by task table name"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ task, sla, stage, has_breached, table, limit }) => {
+    async ({ task, sla, stage, has_breached, table, limit, offset }) => {
       try {
         const queryParts: string[] = [];
         if (task) queryParts.push(`task=${task}`);
@@ -85,6 +88,7 @@ export function registerSlaTools(
           sysparm_query: queryParts.join("^"),
           sysparm_fields: "sys_id,task,sla,stage,has_breached,start_time,end_time,pause_time,pause_duration,business_pause_duration,percentage,sys_updated_on",
           sysparm_limit: limit,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
 

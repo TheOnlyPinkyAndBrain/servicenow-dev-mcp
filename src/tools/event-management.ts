@@ -22,8 +22,9 @@ export function registerEventManagementTools(
       created_after: z.string().optional().describe("Created after datetime"),
       created_before: z.string().optional().describe("Created before datetime"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ severity, source, node, event_class, type, state, created_after, created_before, limit }) => {
+    async ({ severity, source, node, event_class, type, state, created_after, created_before, limit, offset }) => {
       try {
         const qp: string[] = [];
         if (severity) qp.push(`severity=${severity}`);
@@ -40,6 +41,7 @@ export function registerEventManagementTools(
           sysparm_query: qp.join("^"),
           sysparm_fields: "sys_id,source,event_class,resource,node,type,severity,description,message_key,state,additional_info,sys_created_on",
           sysparm_limit: limit,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
@@ -61,8 +63,9 @@ export function registerEventManagementTools(
       assignment_group: z.string().optional().describe("Assignment group name (contains match)"),
       created_after: z.string().optional().describe("Created after datetime"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ severity, state, acknowledged, group_source, cmdb_ci, assignment_group, created_after, limit }) => {
+    async ({ severity, state, acknowledged, group_source, cmdb_ci, assignment_group, created_after, limit, offset }) => {
       try {
         const qp: string[] = [];
         if (severity) qp.push(`severity=${severity}`);
@@ -78,6 +81,7 @@ export function registerEventManagementTools(
           sysparm_query: qp.join("^"),
           sysparm_fields: "sys_id,number,source,severity,state,acknowledged,description,cmdb_ci,assignment_group,assigned_to,group_source,event_count,initial_event_time,last_event_time,sys_created_on",
           sysparm_limit: limit,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
@@ -118,8 +122,9 @@ export function registerEventManagementTools(
       active: z.boolean().optional().describe("Filter by active status (default true)"),
       source: z.string().optional().describe("Source filter"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ active, source, limit }) => {
+    async ({ active, source, limit, offset }) => {
       try {
         const qp: string[] = [];
         if (active !== undefined) qp.push(`active=${active}`);
@@ -131,6 +136,7 @@ export function registerEventManagementTools(
           sysparm_query: qp.join("^"),
           sysparm_fields: "sys_id,name,description,source,active,order,filter,sys_updated_on",
           sysparm_limit: limit,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });

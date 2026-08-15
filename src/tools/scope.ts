@@ -17,8 +17,9 @@ export function registerScopeTools(
       scope: z.string().optional().describe("Scope namespace (contains match)"),
       active: z.boolean().optional().describe("Active status"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ name, scope, active, limit }) => {
+    async ({ name, scope, active, limit, offset }) => {
       try {
         const qp: string[] = [];
         if (name) qp.push(`nameLIKE${name}`);
@@ -30,6 +31,7 @@ export function registerScopeTools(
           sysparm_query: qp.join("^"),
           sysparm_fields: "sys_id,name,scope,short_description,version,active,private,runtime_access_tracking,sys_updated_on",
           sysparm_limit: limit,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
@@ -48,8 +50,9 @@ export function registerScopeTools(
       status: z.enum(["Allowed", "Requested", "Invalidated"]).optional().describe("Status filter"),
       operation: z.string().optional().describe("Operation (e.g., execute, read, write)"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ source_scope, target_scope, status, operation, limit }) => {
+    async ({ source_scope, target_scope, status, operation, limit, offset }) => {
       try {
         const qp: string[] = [];
         if (source_scope) qp.push(`source_scope.nameLIKE${source_scope}`);
@@ -62,6 +65,7 @@ export function registerScopeTools(
           sysparm_query: qp.join("^"),
           sysparm_fields: "sys_id,source_scope,target_scope,operation,status,type,api_name,sys_updated_on",
           sysparm_limit: limit,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
@@ -76,13 +80,15 @@ export function registerScopeTools(
     "List pending cross-scope access requests — requests awaiting admin approval",
     {
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 50)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ limit }) => {
+    async ({ limit, offset }) => {
       try {
         const result = await client.query("sys_scope_privilege", {
           sysparm_query: "statusINRequested,Invalidated^ORDERBYDESCsys_updated_on",
           sysparm_fields: "sys_id,source_scope,target_scope,operation,status,type,api_name,sys_updated_on",
           sysparm_limit: limit ?? 50,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
@@ -99,8 +105,9 @@ export function registerScopeTools(
       target_scope: z.string().optional().describe("Target scope name (contains match)"),
       status: z.string().optional().describe("Status filter"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ target_scope, status, limit }) => {
+    async ({ target_scope, status, limit, offset }) => {
       try {
         const qp: string[] = [];
         if (target_scope) qp.push(`target_scope.nameLIKE${target_scope}`);
@@ -111,6 +118,7 @@ export function registerScopeTools(
           sysparm_query: qp.join("^"),
           sysparm_fields: "sys_id,caller_access,target_scope,operation,status,sys_updated_on",
           sysparm_limit: limit,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });

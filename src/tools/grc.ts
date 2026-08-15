@@ -17,8 +17,9 @@ export function registerGrcTools(
       state: z.string().optional().describe("State filter"),
       active: z.boolean().optional().describe("Active status (default true)"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ name, state, active, limit }) => {
+    async ({ name, state, active, limit, offset }) => {
       try {
         const qp: string[] = [];
         if (name) qp.push(`nameLIKE${name}`);
@@ -31,6 +32,7 @@ export function registerGrcTools(
           sysparm_query: qp.join("^"),
           sysparm_fields: "sys_id,name,description,state,owner,category,review_date,active,sys_updated_on",
           sysparm_limit: limit,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
@@ -49,8 +51,9 @@ export function registerGrcTools(
       state: z.string().optional().describe("State filter"),
       active: z.boolean().optional().describe("Active status (default true)"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ name, policy, state, active, limit }) => {
+    async ({ name, policy, state, active, limit, offset }) => {
       try {
         const qp: string[] = [];
         if (name) qp.push(`nameLIKE${name}`);
@@ -64,6 +67,7 @@ export function registerGrcTools(
           sysparm_query: qp.join("^"),
           sysparm_fields: "sys_id,name,description,policy,state,owner,type,category,control_environment,effectiveness,active,sys_updated_on",
           sysparm_limit: limit,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
@@ -83,8 +87,9 @@ export function registerGrcTools(
       category: z.string().optional().describe("Category"),
       owner: z.string().optional().describe("Owner name (contains match)"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ name, state, risk_score_min, category, owner, limit }) => {
+    async ({ name, state, risk_score_min, category, owner, limit, offset }) => {
       try {
         const qp: string[] = [];
         if (name) qp.push(`nameLIKE${name}`);
@@ -98,6 +103,7 @@ export function registerGrcTools(
           sysparm_query: qp.join("^"),
           sysparm_fields: "sys_id,name,description,state,category,owner,inherent_risk,residual_risk,risk_response,profile,sys_updated_on",
           sysparm_limit: limit,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
@@ -115,8 +121,9 @@ export function registerGrcTools(
       state: z.string().optional().describe("State filter"),
       active: z.boolean().optional().describe("Active status"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ name, state, active, limit }) => {
+    async ({ name, state, active, limit, offset }) => {
       try {
         const qp: string[] = [];
         if (name) qp.push(`nameLIKE${name}`);
@@ -128,6 +135,7 @@ export function registerGrcTools(
           sysparm_query: qp.join("^"),
           sysparm_fields: "sys_id,name,short_description,state,owner,start_date,end_date,active,sys_updated_on",
           sysparm_limit: limit,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
@@ -145,8 +153,9 @@ export function registerGrcTools(
       severity: z.string().optional().describe("Severity filter"),
       profile: z.string().optional().describe("Profile name (contains match)"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ state, severity, profile, limit }) => {
+    async ({ state, severity, profile, limit, offset }) => {
       try {
         const qp: string[] = [];
         if (state) qp.push(`state=${state}`);
@@ -158,6 +167,7 @@ export function registerGrcTools(
           sysparm_query: qp.join("^"),
           sysparm_fields: "sys_id,number,short_description,state,severity,profile,owner,recommendation,remediation_plan,sys_updated_on",
           sysparm_limit: limit,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });

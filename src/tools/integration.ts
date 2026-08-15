@@ -16,8 +16,9 @@ export function registerIntegrationTools(
       name: z.string().optional().describe("Message name (contains match)"),
       active: z.boolean().optional().describe("Active status"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ name, active, limit }) => {
+    async ({ name, active, limit, offset }) => {
       try {
         const qp: string[] = [];
         if (name) qp.push(`nameLIKE${name}`);
@@ -28,6 +29,7 @@ export function registerIntegrationTools(
           sysparm_query: qp.join("^"),
           sysparm_fields: "sys_id,name,rest_endpoint,authentication_type,use_mid_server,active,sys_scope,sys_updated_on",
           sysparm_limit: limit,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
@@ -68,8 +70,9 @@ export function registerIntegrationTools(
       agent: z.string().optional().describe("Agent/MID server name"),
       created_after: z.string().optional().describe("Created after datetime"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ state, queue, topic, agent, created_after, limit }) => {
+    async ({ state, queue, topic, agent, created_after, limit, offset }) => {
       try {
         const qp: string[] = [];
         if (state) qp.push(`state=${state}`);
@@ -83,6 +86,7 @@ export function registerIntegrationTools(
           sysparm_query: qp.join("^"),
           sysparm_fields: "sys_id,name,state,queue,topic,agent,source,error_string,agent_correlator,sys_created_on,sys_updated_on",
           sysparm_limit: limit,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
@@ -98,8 +102,9 @@ export function registerIntegrationTools(
     {
       min_minutes: z.coerce.number().optional().describe("Minimum minutes in processing state (default 15)"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ min_minutes, limit }) => {
+    async ({ min_minutes, limit, offset }) => {
       try {
         const cutoff = new Date(Date.now() - (min_minutes ?? 15) * 60000).toISOString().replace("T", " ").slice(0, 19);
 
@@ -107,6 +112,7 @@ export function registerIntegrationTools(
           sysparm_query: `state=processing^sys_updated_on<=${cutoff}^ORDERBYsys_updated_on`,
           sysparm_fields: "sys_id,name,state,queue,topic,agent,source,error_string,sys_created_on,sys_updated_on",
           sysparm_limit: limit,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
@@ -123,8 +129,9 @@ export function registerIntegrationTools(
       status: z.string().optional().describe("Status filter (Up, Down)"),
       name: z.string().optional().describe("MID server name (contains match)"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ status, name, limit }) => {
+    async ({ status, name, limit, offset }) => {
       try {
         const qp: string[] = [];
         if (status) qp.push(`status=${status}`);
@@ -135,6 +142,7 @@ export function registerIntegrationTools(
           sysparm_query: qp.join("^"),
           sysparm_fields: "sys_id,name,status,host_name,version,validated,user_name,mid_java_version,router,sys_updated_on",
           sysparm_limit: limit,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
@@ -153,8 +161,9 @@ export function registerIntegrationTools(
       http_method: z.string().optional().describe("HTTP method (GET, POST, PUT, PATCH, DELETE)"),
       created_after: z.string().optional().describe("Created after datetime"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ url, status, http_method, created_after, limit }) => {
+    async ({ url, status, http_method, created_after, limit, offset }) => {
       try {
         const qp: string[] = [];
         if (url) qp.push(`urlLIKE${url}`);
@@ -167,6 +176,7 @@ export function registerIntegrationTools(
           sysparm_query: qp.join("^"),
           sysparm_fields: "sys_id,url,http_method,status,response_time,request_body,response_body,sys_created_on,sys_created_by",
           sysparm_limit: limit,
+          sysparm_offset: offset,
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
       } catch (error) {
@@ -184,8 +194,9 @@ export function registerIntegrationTools(
       status: z.string().optional().describe("Execution status"),
       created_after: z.string().optional().describe("Created after datetime"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ flow, action, status, created_after, limit }) => {
+    async ({ flow, action, status, created_after, limit, offset }) => {
       try {
         const qp: string[] = [];
         if (flow) qp.push(`flow.nameLIKE${flow}`);
@@ -198,6 +209,7 @@ export function registerIntegrationTools(
           sysparm_query: qp.join("^"),
           sysparm_fields: "sys_id,flow,action,status,started,ended,error_message,sys_created_on",
           sysparm_limit: limit,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });

@@ -14,13 +14,15 @@ export function registerUpgradeTools(
     "List upgrade/patch history (sys_upgrade_history) — all upgrades and patches applied to this instance",
     {
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ limit }) => {
+    async ({ limit, offset }) => {
       try {
         const result = await client.query("sys_upgrade_history", {
           sysparm_query: "ORDERBYDESCupgrade_started",
           sysparm_fields: "sys_id,from_version,to_version,upgrade_started,upgrade_finished,upgrade_type,state,sys_updated_on",
           sysparm_limit: limit,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
@@ -37,8 +39,9 @@ export function registerUpgradeTools(
       upgrade_history: z.string().optional().describe("Upgrade history sys_id to filter by specific upgrade"),
       type: z.string().optional().describe("Record type (e.g., sys_script, sys_ui_action, sysevent_email_action)"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 50)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ upgrade_history, type, limit }) => {
+    async ({ upgrade_history, type, limit, offset }) => {
       try {
         const qp: string[] = [];
         if (upgrade_history) qp.push(`upgrade_history=${upgrade_history}`);
@@ -49,6 +52,7 @@ export function registerUpgradeTools(
           sysparm_query: `type!=NULL^${qp.join("^")}`,
           sysparm_fields: "sys_id,file_name,type,target_name,disposition,upgrade_history,sys_created_on",
           sysparm_limit: limit ?? 50,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
@@ -67,8 +71,9 @@ export function registerUpgradeTools(
       category: z.string().optional().describe("Category filter"),
       updated_after: z.string().optional().describe("Updated after datetime"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ type, name, category, updated_after, limit }) => {
+    async ({ type, name, category, updated_after, limit, offset }) => {
       try {
         const qp: string[] = [];
         if (type) qp.push(`type=${type}`);
@@ -81,6 +86,7 @@ export function registerUpgradeTools(
           sysparm_query: qp.join("^"),
           sysparm_fields: "sys_id,name,type,target_name,category,update_set,sys_created_by,sys_updated_on",
           sysparm_limit: limit,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });

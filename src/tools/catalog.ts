@@ -272,4 +272,91 @@ export function registerCatalogTools(
       }
     }
   );
+
+  // ========== Ordering (Service Catalog API) ==========
+  // Write tools — only in develop mode
+  if (mode !== "develop") return;
+
+  server.tool(
+    "sn_catalog_order_now",
+    "Order a catalog item directly via the Service Catalog API (POST /api/sn_sc/servicecatalog/items/{id}/order_now). Submits the request in one call, bypassing the cart. Returns the generated request (REQ) and requested item (RITM).",
+    {
+      cat_item_sys_id: z.string().describe("The sys_id of the catalog item (sc_cat_item) to order"),
+      quantity: z.coerce.number().min(1).optional().describe("Quantity to order (default 1)"),
+      variables: z.record(z.unknown()).optional().describe("Variable values keyed by variable name, e.g. { justification: 'new hire', size: 'large' }"),
+    },
+    async ({ cat_item_sys_id, quantity, variables }) => {
+      try {
+        const body: Record<string, unknown> = {
+          sysparm_quantity: String(quantity ?? 1),
+        };
+        if (variables) body.variables = variables;
+        const result = await client.restApi(
+          "POST",
+          `/api/sn_sc/servicecatalog/items/${encodeURIComponent(cat_item_sys_id)}/order_now`,
+          body
+        );
+        return jsonResult(result);
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_catalog_cart_add",
+    "Add a catalog item to the current user's cart via the Service Catalog API (POST /api/sn_sc/servicecatalog/items/{id}/add_to_cart). Use with sn_catalog_cart_get and sn_catalog_cart_submit to build a multi-item order.",
+    {
+      cat_item_sys_id: z.string().describe("The sys_id of the catalog item (sc_cat_item) to add"),
+      quantity: z.coerce.number().min(1).optional().describe("Quantity to add (default 1)"),
+      variables: z.record(z.unknown()).optional().describe("Variable values keyed by variable name"),
+    },
+    async ({ cat_item_sys_id, quantity, variables }) => {
+      try {
+        const body: Record<string, unknown> = {
+          sysparm_quantity: String(quantity ?? 1),
+        };
+        if (variables) body.variables = variables;
+        const result = await client.restApi(
+          "POST",
+          `/api/sn_sc/servicecatalog/items/${encodeURIComponent(cat_item_sys_id)}/add_to_cart`,
+          body
+        );
+        return jsonResult(result);
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_catalog_cart_get",
+    "Get the current user's catalog cart contents via the Service Catalog API (GET /api/sn_sc/servicecatalog/cart). Shows items staged for checkout.",
+    {},
+    async () => {
+      try {
+        const result = await client.restApi("GET", "/api/sn_sc/servicecatalog/cart");
+        return jsonResult(result);
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_catalog_cart_submit",
+    "Submit the current user's cart as an order via the Service Catalog API (POST /api/sn_sc/servicecatalog/cart/submit_order). Creates the request (REQ) from all staged cart items.",
+    {},
+    async () => {
+      try {
+        const result = await client.restApi(
+          "POST",
+          "/api/sn_sc/servicecatalog/cart/submit_order"
+        );
+        return jsonResult(result);
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
 }

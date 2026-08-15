@@ -1,7 +1,7 @@
 {
   "name": "servicenow-mcp",
-  "version": "3.0.0",
-  "description": "Comprehensive MCP server for ServiceNow — 299 tools across 44 modules for expert-level debugging and development",
+  "version": "3.1.0",
+  "description": "Comprehensive MCP server for ServiceNow — 307 tools across 44 modules for expert-level debugging and development",
   "license": "MIT",
   "type": "module",
   "main": "dist/index.js",
