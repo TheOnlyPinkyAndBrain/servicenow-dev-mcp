@@ -11,6 +11,8 @@ import { registerWalkUpTools } from "../src/tools/it-service-management/walk-up.
 import { registerUniversalRequestTools } from "../src/tools/it-service-management/universal-request.js";
 import { registerCimTools } from "../src/tools/it-service-management/continual-improvement.js";
 import { registerOutageTools } from "../src/tools/it-service-management/outage.js";
+import { registerIncidentCommsTools } from "../src/tools/it-service-management/incident-communications.js";
+import { registerBenchmarkTools } from "../src/tools/it-service-management/benchmarks.js";
 
 type Call = [string, ...unknown[]];
 interface Tool {
@@ -83,6 +85,8 @@ const ALL = [
   registerUniversalRequestTools,
   registerCimTools,
   registerOutageTools,
+  registerIncidentCommsTools,
+  registerBenchmarkTools,
 ];
 
 describe("ITSM tool routing (develop mode)", () => {
@@ -192,6 +196,25 @@ describe("ITSM tool routing (develop mode)", () => {
     expect(g.client.calls).toContainEqual(["getById", "sn_cim_register", "cim1"]);
     const getTables = g.client.calls.filter((c) => c[0] === "query").map((c) => c[1]);
     expect(getTables).toEqual(expect.arrayContaining(["sn_cim_task", "sn_cim_related_kpi"]));
+  });
+
+  it("incident communications tools route to incident_alert / incident_alert_task", async () => {
+    const { tools, client } = register("develop");
+    await tools.get("sn_incident_alert_list")!.handler({});
+    await tools.get("sn_incident_alert_task_list")!.handler({});
+    const tables = client.calls.filter((c) => c[0] === "query").map((c) => c[1]);
+    expect(tables).toEqual(expect.arrayContaining(["incident_alert", "incident_alert_task"]));
+    const g = register("develop");
+    await g.tools.get("sn_incident_alert_get")!.handler({ sys_id: "ia1" });
+    expect(g.client.calls).toContainEqual(["getById", "incident_alert", "ia1"]);
+  });
+
+  it("benchmark tools route to sn_bm_common_indicator / sn_bm_client_recommendation", async () => {
+    const { tools, client } = register("develop");
+    await tools.get("sn_benchmark_indicator_list")!.handler({});
+    await tools.get("sn_benchmark_recommendation_list")!.handler({});
+    const tables = client.calls.filter((c) => c[0] === "query").map((c) => c[1]);
+    expect(tables).toEqual(expect.arrayContaining(["sn_bm_common_indicator", "sn_bm_client_recommendation"]));
   });
 
   it("outage tools route to cmdb_ci_outage", async () => {

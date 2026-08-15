@@ -39,6 +39,8 @@ import { registerWalkUpTools } from "./it-service-management/walk-up.js";
 import { registerUniversalRequestTools } from "./it-service-management/universal-request.js";
 import { registerCimTools } from "./it-service-management/continual-improvement.js";
 import { registerOutageTools } from "./it-service-management/outage.js";
+import { registerIncidentCommsTools } from "./it-service-management/incident-communications.js";
+import { registerBenchmarkTools } from "./it-service-management/benchmarks.js";
 
 // Application development (scripting, flow, workflow, CI/CD)
 import { registerScriptTools } from "./application-development/script.js";
@@ -125,6 +127,8 @@ export const registrars: Registrar[] = [
   registerUniversalRequestTools,
   registerCimTools,
   registerOutageTools,
+  registerIncidentCommsTools,
+  registerBenchmarkTools,
 
   // Application development
   registerScriptTools,

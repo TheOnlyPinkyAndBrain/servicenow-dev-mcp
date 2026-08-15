@@ -2,7 +2,7 @@
 
 Incident, problem, change, SLA, and approval management.
 
-**Module folder:** `src/tools/it-service-management/` · **Files:** 11 · **Tools:** 56
+**Module folder:** `src/tools/it-service-management/` · **Files:** 13 · **Tools:** 61
 
 Read-only tools (`both`) work in `debug` and `develop` modes; `develop` tools require `SERVICENOW_MODE=develop`.
 
@@ -13,6 +13,8 @@ Read-only tools (`both`) work in `debug` and `develop` modes; `develop` tools re
 | `sn_approval_pending_for_user` | both | List pending approvals for a specific user |
 | `sn_approval_stale` | both | Find stale approvals — requests that have been pending for more than N days |
 | `sn_approval_update` | develop | Update an approval record (approve, reject, etc.) |
+| `sn_benchmark_indicator_list` | both | List benchmark indicators (sn_bm_common_indicator) — the KPIs measured for peer benchmarking (e.g. MTTR, reopen rate). Requires the Benchmarks plugin. |
+| `sn_benchmark_recommendation_list` | both | List benchmark recommendations (sn_bm_client_recommendation) — improvement suggestions tied to a benchmark indicator and threshold. Requires the Benchmarks plugin. |
 | `sn_cab_agenda_list` | both | List CAB meeting agenda items (cab_agenda_item) — the changes queued for review at a CAB meeting. |
 | `sn_cab_meeting_list` | both | List Change Advisory Board (CAB) meetings (cab_meeting). Shows scheduled/held CAB meetings for reviewing changes. |
 | `sn_catalog_cart_add` | develop | Add a catalog item to the current user's cart via the Service Catalog API (POST /api/sn_sc/servicecatalog/items/{id}/add_to_cart). Use with sn_catalog_cart_get and sn_catalog_cart_submit to build a multi-item order. |
@@ -38,6 +40,9 @@ Read-only tools (`both`) work in `debug` and `develop` modes; `develop` tools re
 | `sn_cim_initiative_list` | both | List Continual Improvement initiatives (sn_cim_register) — improvement records tracking a target outcome/KPI. Requires the Continual Improvement Management plugin (com.sn_cim). |
 | `sn_cim_task_list` | both | List Continual Improvement tasks (sn_cim_task) — work items under an improvement initiative. Requires the Continual Improvement Management plugin (com.sn_cim). |
 | `sn_delegation_list` | both | List user delegation assignments (sys_user_delegate) |
+| `sn_incident_alert_get` | both | Get an incident alert / major-incident communication (incident_alert) by sys_id, together with its communication tasks (incident_alert_task). |
+| `sn_incident_alert_list` | both | List incident alerts / major-incident communications (incident_alert) — the communication records that drive stakeholder updates during a major incident, with severity, comm plan, and source incident. Requires Incident Communications / Major Incident Management plugins. |
+| `sn_incident_alert_task_list` | both | List incident communication tasks (incident_alert_task) — the individual stakeholder-communication work items under a major incident alert. |
 | `sn_incident_create` | develop | Create a new incident |
 | `sn_incident_get` | both | Get full incident details including related records (child incidents, tasks, SLAs, comments) |
 | `sn_incident_list` | both | List incidents with filters for priority, state, assignment group, assigned_to, category, and time range |
