@@ -2,12 +2,16 @@
 
 ACLs, roles, and access control.
 
-**Module folder:** `src/tools/platform-security/` · **Files:** 1 · **Tools:** 8
+**Module folder:** `src/tools/platform-security/` · **Files:** 2 · **Tools:** 12
 
 Read-only tools (`both`) work in `debug` and `develop` modes; `develop` tools require `SERVICENOW_MODE=develop`.
 
 | Tool | Mode | Description |
 |------|------|-------------|
+| `sn_acl_create` | develop | Create a new ACL (sys_security_acl) |
+| `sn_acl_get` | both | Get full ACL details by sys_id, including script and condition |
+| `sn_acl_list` | both | List ACLs (sys_security_acl), optionally filtered by table, operation, or type |
+| `sn_acl_update` | develop | Update an existing ACL (sys_security_acl) |
 | `sn_group_list` | both | List ServiceNow groups (sys_user_group). Search by name, type, or manager. |
 | `sn_group_members` | both | List members of a group (sys_user_grmember) |
 | `sn_group_roles` | both | List roles assigned to a group (sys_group_has_role) |
