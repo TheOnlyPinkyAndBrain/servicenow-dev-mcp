@@ -4,6 +4,14 @@
 
 A comprehensive MCP (Model Context Protocol) server providing expert-level access to ServiceNow instances. v3.3.0 with 330 tools across 50 modules.
 
+## Coverage Model
+
+The ServiceNow docs span ~49,000 topics, so the server does not ship a tool per feature. Two layers give complete practical coverage:
+1. **Universal access** — the generic tools (`sn_table_*`, `sn_aggregate`, `sn_schema_*`, `sn_rest_api_*`, `sn_batch_request`) reach any table / REST API on the instance. Anything programmatically accessible is already reachable.
+2. **Ergonomic tools** — the `sn_<module>_*` tools are curated wrappers for high-value workflows (typed params, mode-gating, curated fields, related-record fetch, dedicated APIs).
+
+"Coverage/parity" = high-value areas get dedicated ergonomic tools; everything else is served by the generic layer. When deciding whether to add a tool: add it only if the area is high-value/high-frequency; otherwise rely on the generic layer. Module passes expand the ergonomic layer (completeness vs. docs + annotations + tests + live field verification).
+
 ## Architecture
 
 - **Entry point**: `src/index.ts` — creates MCP server, loads config, registers all tool modules
