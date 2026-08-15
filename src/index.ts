@@ -90,7 +90,7 @@ const client = new ServiceNowClient(config);
 
 const server = new McpServer({
   name: "servicenow-mcp",
-  version: "3.0.0",
+  version: "3.1.0",
 });
 
 const registrars = [
