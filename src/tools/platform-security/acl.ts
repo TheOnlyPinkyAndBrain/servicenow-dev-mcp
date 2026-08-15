@@ -60,6 +60,29 @@ export function registerAclTools(
     }
   );
 
+  server.tool(
+    "sn_acl_roles",
+    "List the roles required by an ACL (sys_security_acl_role) — the role-to-ACL mappings that determine which roles satisfy an access control. Useful for debugging why a user can/can't access a record.",
+    {
+      acl_sys_id: z.string().describe("The sys_id of the ACL (sys_security_acl)"),
+      limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 50)"),
+    },
+    READ,
+    async ({ acl_sys_id, limit }) => {
+      try {
+        const result = await client.query("sys_security_acl_role", {
+          sysparm_query: `sys_security_acl=${acl_sys_id}`,
+          sysparm_fields: "sys_id,sys_security_acl,sys_user_role",
+          sysparm_limit: limit ?? 50,
+          sysparm_display_value: "true",
+        });
+        return jsonResult({ aclSysId: acl_sys_id, count: result.records.length, roles: result.records });
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
   if (mode !== "develop") return;
 
   server.tool(

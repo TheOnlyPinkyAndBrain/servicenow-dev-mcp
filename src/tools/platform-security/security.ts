@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServiceNowClient } from "../../client.js";
 import type { Mode } from "../../types.js";
 import { errorResult, jsonResult } from "../../utils.js";
+import { READ } from "../../annotations.js";
 
 export function registerSecurityTools(
   server: McpServer,
@@ -23,6 +24,7 @@ export function registerSecurityTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ name, email, user_name, active, query, limit, offset }) => {
       try {
         const queryParts: string[] = [];
@@ -59,6 +61,7 @@ export function registerSecurityTools(
       user_sys_id: z.string().describe("sys_id of the user"),
       inherited: z.boolean().optional().describe("Include roles inherited from groups (default true)"),
     },
+    READ,
     async ({ user_sys_id, inherited }) => {
       try {
         const queryParts = [`user=${user_sys_id}`];
@@ -89,6 +92,7 @@ export function registerSecurityTools(
     {
       user_sys_id: z.string().describe("sys_id of the user"),
     },
+    READ,
     async ({ user_sys_id }) => {
       try {
         const result = await client.query("sys_user_grmember", {
@@ -122,6 +126,7 @@ export function registerSecurityTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ name, type, active, manager, limit, offset }) => {
       try {
         const queryParts: string[] = [];
@@ -156,6 +161,7 @@ export function registerSecurityTools(
     {
       group_sys_id: z.string().describe("sys_id of the group"),
     },
+    READ,
     async ({ group_sys_id }) => {
       try {
         const result = await client.query("sys_user_grmember", {
@@ -182,6 +188,7 @@ export function registerSecurityTools(
     {
       group_sys_id: z.string().describe("sys_id of the group"),
     },
+    READ,
     async ({ group_sys_id }) => {
       try {
         const result = await client.query("sys_group_has_role", {
@@ -213,6 +220,7 @@ export function registerSecurityTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ name, elevated_privilege, limit, offset }) => {
       try {
         const queryParts: string[] = [];
@@ -245,6 +253,7 @@ export function registerSecurityTools(
     {
       role_sys_id: z.string().describe("sys_id of the parent role"),
     },
+    READ,
     async ({ role_sys_id }) => {
       try {
         const result = await client.query("sys_user_role_contains", {
@@ -259,6 +268,100 @@ export function registerSecurityTools(
           count: result.records.length,
           containedRoles: result.records,
         });
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_user_criteria_list",
+    "List user criteria (user_criteria) — reusable access-control definitions (by role/group/user/company/dept/location) used to gate catalog items and knowledge.",
+    {
+      name: z.string().optional().describe("Filter by name (contains match)"),
+      active: z.boolean().optional().describe("Filter by active status"),
+      query: z.string().optional().describe("Additional encoded query"),
+      limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
+    },
+    READ,
+    async ({ name, active, query, limit, offset }) => {
+      try {
+        const queryParts: string[] = [];
+        if (name) queryParts.push(`nameLIKE${name}`);
+        if (active !== undefined) queryParts.push(`active=${active}`);
+        if (query) queryParts.push(query);
+        queryParts.push("ORDERBYname");
+        const result = await client.query("user_criteria", {
+          sysparm_query: queryParts.join("^"),
+          sysparm_fields: "sys_id,name,active,role,group,user,match_all,short_description,sys_updated_on",
+          sysparm_limit: limit,
+          sysparm_offset: offset,
+          sysparm_display_value: "true",
+        });
+        return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_oauth_entity_list",
+    "List OAuth application registries (oauth_entity) — OAuth clients/providers configured on the instance. Secrets are not returned.",
+    {
+      name: z.string().optional().describe("Filter by name (contains match)"),
+      active: z.boolean().optional().describe("Filter by active status"),
+      query: z.string().optional().describe("Additional encoded query"),
+      limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
+    },
+    READ,
+    async ({ name, active, query, limit, offset }) => {
+      try {
+        const queryParts: string[] = [];
+        if (name) queryParts.push(`nameLIKE${name}`);
+        if (active !== undefined) queryParts.push(`active=${active}`);
+        if (query) queryParts.push(query);
+        queryParts.push("ORDERBYname");
+        const result = await client.query("oauth_entity", {
+          sysparm_query: queryParts.join("^"),
+          sysparm_fields: "sys_id,name,client_id,client_type,type,active,default_grant_type,redirect_url,sys_updated_on",
+          sysparm_limit: limit,
+          sysparm_offset: offset,
+          sysparm_display_value: "true",
+        });
+        return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_ldap_server_list",
+    "List LDAP server configurations (ldap_server_config) — directory servers used for import/authentication. Credentials are not returned.",
+    {
+      name: z.string().optional().describe("Filter by name (contains match)"),
+      active: z.boolean().optional().describe("Filter by active status"),
+      limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
+    },
+    READ,
+    async ({ name, active, limit, offset }) => {
+      try {
+        const queryParts: string[] = [];
+        if (name) queryParts.push(`nameLIKE${name}`);
+        if (active !== undefined) queryParts.push(`active=${active}`);
+        queryParts.push("ORDERBYname");
+        const result = await client.query("ldap_server_config", {
+          sysparm_query: queryParts.join("^"),
+          sysparm_fields: "sys_id,name,active,server_url,ssl,mid_server,vendor,sys_updated_on",
+          sysparm_limit: limit,
+          sysparm_offset: offset,
+          sysparm_display_value: "true",
+        });
+        return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
       } catch (error) {
         return errorResult(error);
       }
