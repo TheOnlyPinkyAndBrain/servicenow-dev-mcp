@@ -2,7 +2,7 @@
 
 Incident, problem, change, SLA, and approval management.
 
-**Module folder:** `src/tools/it-service-management/` · **Files:** 9 · **Tools:** 51
+**Module folder:** `src/tools/it-service-management/` · **Files:** 10 · **Tools:** 54
 
 Read-only tools (`both`) work in `debug` and `develop` modes; `develop` tools require `SERVICENOW_MODE=develop`.
 
@@ -34,6 +34,9 @@ Read-only tools (`both`) work in `debug` and `develop` modes; `develop` tools re
 | `sn_change_task_create` | develop | Create a change task (change_task) under a change request. |
 | `sn_change_task_list` | both | List change tasks for a change request or across all changes |
 | `sn_change_update` | develop | Update an existing change request |
+| `sn_cim_initiative_get` | both | Get a Continual Improvement initiative (sn_cim_register) by sys_id, together with its CIM tasks (sn_cim_task) and impacted KPIs (sn_cim_related_kpi). |
+| `sn_cim_initiative_list` | both | List Continual Improvement initiatives (sn_cim_register) — improvement records tracking a target outcome/KPI. Requires the Continual Improvement Management plugin (com.sn_cim). |
+| `sn_cim_task_list` | both | List Continual Improvement tasks (sn_cim_task) — work items under an improvement initiative. Requires the Continual Improvement Management plugin (com.sn_cim). |
 | `sn_delegation_list` | both | List user delegation assignments (sys_user_delegate) |
 | `sn_incident_create` | develop | Create a new incident |
 | `sn_incident_get` | both | Get full incident details including related records (child incidents, tasks, SLAs, comments) |

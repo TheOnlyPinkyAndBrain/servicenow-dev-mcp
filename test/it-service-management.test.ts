@@ -9,6 +9,7 @@ import { registerSlaTools } from "../src/tools/it-service-management/sla.js";
 import { registerOnCallTools } from "../src/tools/it-service-management/on-call.js";
 import { registerWalkUpTools } from "../src/tools/it-service-management/walk-up.js";
 import { registerUniversalRequestTools } from "../src/tools/it-service-management/universal-request.js";
+import { registerCimTools } from "../src/tools/it-service-management/continual-improvement.js";
 
 type Call = [string, ...unknown[]];
 interface Tool {
@@ -79,6 +80,7 @@ const ALL = [
   registerOnCallTools,
   registerWalkUpTools,
   registerUniversalRequestTools,
+  registerCimTools,
 ];
 
 describe("ITSM tool routing (develop mode)", () => {
@@ -174,6 +176,20 @@ describe("ITSM tool routing (develop mode)", () => {
     const { tools, client } = register("develop");
     await tools.get("sn_approval_update")!.handler({ sys_id: "ap1", state: "approved" });
     expect(client.calls.find((c) => c[0] === "update")?.[1]).toBe("sysapproval_approver");
+  });
+
+  it("CIM tools route to sn_cim_register / sn_cim_task / sn_cim_related_kpi", async () => {
+    const { tools, client } = register("develop");
+    await tools.get("sn_cim_initiative_list")!.handler({});
+    await tools.get("sn_cim_task_list")!.handler({});
+    const tables = client.calls.filter((c) => c[0] === "query").map((c) => c[1]);
+    expect(tables).toEqual(expect.arrayContaining(["sn_cim_register", "sn_cim_task"]));
+
+    const g = register("develop");
+    await g.tools.get("sn_cim_initiative_get")!.handler({ sys_id: "cim1" });
+    expect(g.client.calls).toContainEqual(["getById", "sn_cim_register", "cim1"]);
+    const getTables = g.client.calls.filter((c) => c[0] === "query").map((c) => c[1]);
+    expect(getTables).toEqual(expect.arrayContaining(["sn_cim_task", "sn_cim_related_kpi"]));
   });
 
   it("row-7 tools query their plugin tables", async () => {
