@@ -4,6 +4,15 @@
 
 A comprehensive MCP (Model Context Protocol) server that gives AI assistants expert-level access to any ServiceNow module. **330 tools across 50 modules.** Connects to a ServiceNow instance via Basic Auth and provides tools for debugging, inspecting configuration, and building features across the entire platform.
 
+## Coverage model
+
+The ServiceNow product documentation spans ~49,000 topics, so this server does **not** ship a tool per feature. Instead it combines two layers, which together give complete, practical coverage:
+
+1. **Universal access (generic tools).** `sn_table_query` / `sn_table_get` / `sn_table_create` / `sn_table_update` / `sn_table_delete`, `sn_aggregate`, `sn_schema_*`, `sn_rest_api_*`, and `sn_batch_request` can read and write **any** table and invoke **any** REST API on the instance. Anything in ServiceNow that is programmatically accessible is reachable today, with no new tool required.
+2. **Ergonomic tools (curated).** The `sn_<module>_*` tools are first-class wrappers for high-value workflows — typed parameters, `debug`/`develop` mode-gating, curated field selection, related-record fetch, and dedicated ServiceNow APIs (IRE, `sn_chg_rest`, Service Catalog, Knowledge, CMDB Instance).
+
+So **"coverage" means: high-value capability areas have dedicated ergonomic tools; everything else stays reachable through the generic layer.** Module-by-module passes expand the ergonomic layer where it adds the most value (each pass: completeness vs. the docs + MCP annotations + unit tests + live-instance field verification). Low-value or niche areas are intentionally served by the generic layer rather than bespoke tools.
+
 ## Modules
 
 Tools are organized into folders named after ServiceNow product modules (matching the [official ServiceNow docs](https://www.servicenow.com/docs) taxonomy). Each folder has its own README listing every tool and whether it needs `develop` mode.
