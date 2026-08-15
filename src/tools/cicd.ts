@@ -17,8 +17,9 @@ export function registerCicdTools(
       active: z.boolean().optional().describe("Active status (default true)"),
       sys_scope: z.string().optional().describe("Application scope sys_id"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ name, active, sys_scope, limit }) => {
+    async ({ name, active, sys_scope, limit, offset }) => {
       try {
         const qp: string[] = [];
         if (name) qp.push(`nameLIKE${name}`);
@@ -31,6 +32,7 @@ export function registerCicdTools(
           sysparm_query: qp.join("^"),
           sysparm_fields: "sys_id,name,description,active,sys_scope,sys_updated_on",
           sysparm_limit: limit,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
@@ -47,8 +49,9 @@ export function registerCicdTools(
       name: z.string().optional().describe("Suite name (contains match)"),
       active: z.boolean().optional().describe("Active status (default true)"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ name, active, limit }) => {
+    async ({ name, active, limit, offset }) => {
       try {
         const qp: string[] = [];
         if (name) qp.push(`nameLIKE${name}`);
@@ -60,6 +63,7 @@ export function registerCicdTools(
           sysparm_query: qp.join("^"),
           sysparm_fields: "sys_id,name,description,active,sys_scope,sys_updated_on",
           sysparm_limit: limit,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
@@ -77,8 +81,9 @@ export function registerCicdTools(
       test_suite: z.string().optional().describe("Test suite sys_id"),
       status: z.enum(["success", "failure", "error"]).optional().describe("Result status"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ test, test_suite, status, limit }) => {
+    async ({ test, test_suite, status, limit, offset }) => {
       try {
         const qp: string[] = [];
         if (test) qp.push(`test=${test}`);
@@ -90,6 +95,7 @@ export function registerCicdTools(
           sysparm_query: qp.join("^"),
           sysparm_fields: "sys_id,test,test_suite,status,start_time,end_time,duration,output,sys_created_on",
           sysparm_limit: limit,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
@@ -107,8 +113,9 @@ export function registerCicdTools(
       scope: z.string().optional().describe("App scope (contains match)"),
       active: z.boolean().optional().describe("Active status"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ name, scope, active, limit }) => {
+    async ({ name, scope, active, limit, offset }) => {
       try {
         const qp: string[] = [];
         if (name) qp.push(`nameLIKE${name}`);
@@ -121,12 +128,14 @@ export function registerCicdTools(
             sysparm_query: qp.join("^"),
             sysparm_fields: "sys_id,name,scope,version,active,vendor,sys_updated_on",
             sysparm_limit: limit,
+            sysparm_offset: offset,
             sysparm_display_value: "true",
           }),
           client.query("sys_app", {
             sysparm_query: qp.join("^"),
             sysparm_fields: "sys_id,name,scope,version,active,vendor,sys_updated_on",
             sysparm_limit: limit,
+            sysparm_offset: offset,
             sysparm_display_value: "true",
           }),
         ]);
@@ -148,8 +157,9 @@ export function registerCicdTools(
       name: z.string().optional().describe("Plugin name (contains match)"),
       active: z.boolean().optional().describe("Active status (default true)"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 50)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ name, active, limit }) => {
+    async ({ name, active, limit, offset }) => {
       try {
         const qp: string[] = [];
         if (name) qp.push(`nameLIKE${name}`);
@@ -161,6 +171,7 @@ export function registerCicdTools(
           sysparm_query: qp.join("^"),
           sysparm_fields: "sys_id,name,source,active,version,sys_updated_on",
           sysparm_limit: limit ?? 50,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });

@@ -21,8 +21,9 @@ export function registerEmailTools(
       created_after: z.string().optional().describe("Created after datetime"),
       created_before: z.string().optional().describe("Created before datetime"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ type, state, recipients, subject, target_table, created_after, created_before, limit }) => {
+    async ({ type, state, recipients, subject, target_table, created_after, created_before, limit, offset }) => {
       try {
         const qp: string[] = [];
         if (type) qp.push(`type=${type}`);
@@ -38,6 +39,7 @@ export function registerEmailTools(
           sysparm_query: qp.join("^"),
           sysparm_fields: "sys_id,type,state,subject,recipients,sender,target_table,instance,direct,notification,sys_created_on",
           sysparm_limit: limit,
+          sysparm_offset: offset,
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
       } catch (error) {
@@ -68,8 +70,9 @@ export function registerEmailTools(
     {
       created_after: z.string().optional().describe("Created after datetime"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ created_after, limit }) => {
+    async ({ created_after, limit, offset }) => {
       try {
         const qp: string[] = ["stateINerror,send-ignored,skipped", "type=send"];
         if (created_after) qp.push(`sys_created_on>=${created_after}`);
@@ -79,6 +82,7 @@ export function registerEmailTools(
           sysparm_query: qp.join("^"),
           sysparm_fields: "sys_id,state,subject,recipients,sender,target_table,notification,error_string,sys_created_on",
           sysparm_limit: limit,
+          sysparm_offset: offset,
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
       } catch (error) {
@@ -138,8 +142,9 @@ export function registerEmailTools(
       collection: z.string().optional().describe("Table name"),
       active: z.boolean().optional().describe("Active status (default true)"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ name, collection, active, limit }) => {
+    async ({ name, collection, active, limit, offset }) => {
       try {
         const qp: string[] = [];
         if (name) qp.push(`nameLIKE${name}`);
@@ -152,6 +157,7 @@ export function registerEmailTools(
           sysparm_query: qp.join("^"),
           sysparm_fields: "sys_id,name,collection,event_name,recipient_fields,weight,send_self,active,condition,sys_updated_on",
           sysparm_limit: limit,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
@@ -167,8 +173,9 @@ export function registerEmailTools(
     {
       active: z.boolean().optional().describe("Active status"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ active, limit }) => {
+    async ({ active, limit, offset }) => {
       try {
         const qp: string[] = [];
         if (active !== undefined) qp.push(`active=${active}`);
@@ -178,6 +185,7 @@ export function registerEmailTools(
           sysparm_query: qp.join("^"),
           sysparm_fields: "sys_id,name,type,server,port,active,sys_updated_on",
           sysparm_limit: limit,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });

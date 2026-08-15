@@ -7,7 +7,7 @@ import { errorResult, jsonResult } from "../utils.js";
 export function registerCmdbTools(
   server: McpServer,
   client: ServiceNowClient,
-  _mode: Mode
+  mode: Mode
 ): void {
   server.tool(
     "sn_cmdb_ci_list",
@@ -140,6 +140,99 @@ export function registerCmdbTools(
           count: result.records.length,
           records: result.records,
         });
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_cmdb_instance_get",
+    "Get a Configuration Item via the CMDB Instance API (/api/now/cmdb/instance). Returns the CI's attributes plus its inbound and outbound relations in a single call — richer than sn_cmdb_ci_get, which returns table columns only.",
+    {
+      ci_class: z.string().describe("The CI class table name, e.g. 'cmdb_ci_linux_server', 'cmdb_ci_app_server'. Must be the specific class, not 'cmdb_ci'."),
+      sys_id: z.string().describe("The sys_id of the CI"),
+    },
+    async ({ ci_class, sys_id }) => {
+      try {
+        const result = await client.restApi(
+          "GET",
+          `/api/now/cmdb/instance/${encodeURIComponent(ci_class)}/${encodeURIComponent(sys_id)}`
+        );
+        return jsonResult(result);
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  // Write tools — only in develop mode
+  if (mode !== "develop") return;
+
+  server.tool(
+    "sn_cmdb_instance_create",
+    "Create a Configuration Item via the CMDB Instance API (POST /api/now/cmdb/instance/{class}). This routes through the Identification and Reconciliation Engine (IRE), so it deduplicates against existing CIs instead of blindly inserting. Prefer this over sn_table_create for CIs.",
+    {
+      ci_class: z.string().describe("The CI class table name, e.g. 'cmdb_ci_linux_server'"),
+      attributes: z.record(z.unknown()).describe("CI field values, e.g. { name: 'web01', ip_address: '10.0.0.1', serial_number: 'ABC123' }"),
+      source: z.string().describe("Required. The discovery/data source for the record — must be a valid 'discovery_source' choice value on the instance, e.g. 'ServiceNow'. The CMDB Instance API rejects the call without it."),
+    },
+    async ({ ci_class, attributes, source }) => {
+      try {
+        const body: Record<string, unknown> = { attributes, source };
+        const result = await client.restApi(
+          "POST",
+          `/api/now/cmdb/instance/${encodeURIComponent(ci_class)}`,
+          body
+        );
+        return jsonResult(result);
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_cmdb_instance_update",
+    "Update a Configuration Item via the CMDB Instance API (PATCH /api/now/cmdb/instance/{class}/{sys_id}). Applies reconciliation rules so trusted sources aren't overwritten by less-trusted data.",
+    {
+      ci_class: z.string().describe("The CI class table name, e.g. 'cmdb_ci_linux_server'"),
+      sys_id: z.string().describe("The sys_id of the CI to update"),
+      attributes: z.record(z.unknown()).describe("CI field values to update, e.g. { operational_status: '1', comments: 'updated' }"),
+      source: z.string().describe("Required. The discovery/data source for the update — must be a valid 'discovery_source' choice value on the instance, e.g. 'ServiceNow'."),
+    },
+    async ({ ci_class, sys_id, attributes, source }) => {
+      try {
+        const body: Record<string, unknown> = { attributes, source };
+        const result = await client.restApi(
+          "PATCH",
+          `/api/now/cmdb/instance/${encodeURIComponent(ci_class)}/${encodeURIComponent(sys_id)}`,
+          body
+        );
+        return jsonResult(result);
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_cmdb_identify_reconcile",
+    "Create or update CIs and their relationships through the Identification and Reconciliation API (POST /api/now/identifyreconcile). This is the supported way to write CMDB data from an external source: IRE matches on identification rules to avoid duplicate CIs and enforces reconciliation. Use for bulk/multi-CI payloads with relations.",
+    {
+      items: z.array(z.record(z.unknown())).describe("Array of CI payloads. Each item: { className: 'cmdb_ci_linux_server', values: { name, ip_address, ... }, sys_object_source_info?: { source, source_native_key } }"),
+      relations: z.array(z.record(z.unknown())).optional().describe("Optional relationships between items, e.g. [{ type: 'Runs on::Runs', parent: 0, child: 1 }] where parent/child index into items"),
+      data_source: z.string().optional().describe("Value for sysparm_data_source query param identifying the writing source"),
+    },
+    async ({ items, relations, data_source }) => {
+      try {
+        const body: Record<string, unknown> = { items };
+        if (relations) body.relations = relations;
+        const path = data_source
+          ? `/api/now/identifyreconcile?sysparm_data_source=${encodeURIComponent(data_source)}`
+          : "/api/now/identifyreconcile";
+        const result = await client.restApi("POST", path, body);
+        return jsonResult(result);
       } catch (error) {
         return errorResult(error);
       }

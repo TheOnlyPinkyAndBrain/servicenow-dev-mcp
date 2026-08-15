@@ -16,8 +16,9 @@ export function registerServicePortalTools(
       title: z.string().optional().describe("Portal title (contains match)"),
       active: z.boolean().optional().describe("Active status"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ title, active, limit }) => {
+    async ({ title, active, limit, offset }) => {
       try {
         const qp: string[] = [];
         if (title) qp.push(`titleLIKE${title}`);
@@ -28,6 +29,7 @@ export function registerServicePortalTools(
           sysparm_query: qp.join("^"),
           sysparm_fields: "sys_id,title,url_suffix,default_page,theme,css,quick_start_enabled,active,sys_updated_on",
           sysparm_limit: limit,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
@@ -44,8 +46,9 @@ export function registerServicePortalTools(
       title: z.string().optional().describe("Page title (contains match)"),
       id: z.string().optional().describe("Page ID (URL path)"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ title, id, limit }) => {
+    async ({ title, id, limit, offset }) => {
       try {
         const qp: string[] = [];
         if (title) qp.push(`titleLIKE${title}`);
@@ -56,6 +59,7 @@ export function registerServicePortalTools(
           sysparm_query: qp.join("^"),
           sysparm_fields: "sys_id,title,id,description,draft,internal,sys_updated_on",
           sysparm_limit: limit,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
@@ -73,8 +77,9 @@ export function registerServicePortalTools(
       id: z.string().optional().describe("Widget ID"),
       category: z.string().optional().describe("Category"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ name, id, category, limit }) => {
+    async ({ name, id, category, limit, offset }) => {
       try {
         const qp: string[] = [];
         if (name) qp.push(`nameLIKE${name}`);
@@ -86,6 +91,7 @@ export function registerServicePortalTools(
           sysparm_query: qp.join("^"),
           sysparm_fields: "sys_id,name,id,description,category,data_table,template,client_script,script,css,sys_updated_on",
           sysparm_limit: limit,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
@@ -125,8 +131,9 @@ export function registerServicePortalTools(
     {
       name: z.string().optional().describe("Theme name (contains match)"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ name, limit }) => {
+    async ({ name, limit, offset }) => {
       try {
         const qp: string[] = [];
         if (name) qp.push(`nameLIKE${name}`);
@@ -136,6 +143,7 @@ export function registerServicePortalTools(
           sysparm_query: qp.join("^"),
           sysparm_fields: "sys_id,name,css_variables,navbar_fixed,footer_fixed,sys_updated_on",
           sysparm_limit: limit,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
@@ -152,8 +160,9 @@ export function registerServicePortalTools(
       name: z.string().optional().describe("Provider name (contains match)"),
       type: z.string().optional().describe("Provider type (factory, service, directive)"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ name, type, limit }) => {
+    async ({ name, type, limit, offset }) => {
       try {
         const qp: string[] = [];
         if (name) qp.push(`nameLIKE${name}`);
@@ -164,6 +173,7 @@ export function registerServicePortalTools(
           sysparm_query: qp.join("^"),
           sysparm_fields: "sys_id,name,type,script,sys_scope,sys_updated_on",
           sysparm_limit: limit,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });

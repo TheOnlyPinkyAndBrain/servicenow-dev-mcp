@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A comprehensive MCP (Model Context Protocol) server that gives AI assistants expert-level access to any ServiceNow module. **299 tools across 44 modules.** Connects to a ServiceNow instance via Basic Auth and provides tools for debugging, inspecting configuration, and building features across the entire platform.
+A comprehensive MCP (Model Context Protocol) server that gives AI assistants expert-level access to any ServiceNow module. **307 tools across 44 modules.** Connects to a ServiceNow instance via Basic Auth and provides tools for debugging, inspecting configuration, and building features across the entire platform.
 
 ## Capabilities
 
@@ -37,7 +37,7 @@ This server covers **every major ServiceNow module** — giving an AI assistant 
 ### Service Management
 | Module | Tools | What you can do |
 |--------|-------|----------------|
-| **Service Catalog** | 8 | Browse items, variables, variable sets, client scripts, RITMs, catalog tasks |
+| **Service Catalog** | 12 | Browse items, variables, variable sets, client scripts, RITMs, catalog tasks; order items and manage the cart via the Service Catalog API |
 | **Knowledge Management** | 8 | Search articles (KM API), browse bases/categories, manage feedback, create/update articles |
 | **Service Portal** | 6 | Inspect portals, pages, widgets (HTML/CSS/scripts), themes, Angular providers |
 
@@ -45,7 +45,7 @@ This server covers **every major ServiceNow module** — giving an AI assistant 
 | Module | Tools | What you can do |
 |--------|-------|----------------|
 | **Configuration Items** | 11 | Browse CIs, relationships, CI classes, impacts |
-| **CMDB** | 4 | CI class hierarchy, relationship types |
+| **CMDB** | 8 | CI class hierarchy, relationship types; read/create/update CIs via the CMDB Instance API and Identification & Reconciliation (IRE) engine |
 | **IT Asset Management** | 8 | Hardware assets, software licenses, software installations, product models |
 
 ### ITOM (IT Operations Management)

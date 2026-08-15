@@ -17,8 +17,9 @@ export function registerScheduledJobTools(
       active: z.boolean().optional().describe("Active status"),
       run_type: z.string().optional().describe("Run type: on_demand, daily, weekly, monthly, periodically"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ name, active, run_type, limit }) => {
+    async ({ name, active, run_type, limit, offset }) => {
       try {
         const qp: string[] = [];
         if (name) qp.push(`nameLIKE${name}`);
@@ -30,6 +31,7 @@ export function registerScheduledJobTools(
           sysparm_query: qp.join("^"),
           sysparm_fields: "sys_id,name,active,run_type,run_dayofweek,run_time,run_start,run_period,conditional,condition,sys_updated_on",
           sysparm_limit: limit,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
@@ -47,8 +49,9 @@ export function registerScheduledJobTools(
       name: z.string().optional().describe("Trigger name (contains match)"),
       claimed_by: z.string().optional().describe("Node system_id that claimed the job"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ state, name, claimed_by, limit }) => {
+    async ({ state, name, claimed_by, limit, offset }) => {
       try {
         const qp: string[] = [];
         if (state) qp.push(`state=${state}`);
@@ -60,6 +63,7 @@ export function registerScheduledJobTools(
           sysparm_query: qp.join("^"),
           sysparm_fields: "sys_id,name,state,claimed_by,next_action,run_count,process_duration,trigger_type,sys_updated_on,sys_updated_by",
           sysparm_limit: limit,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
@@ -75,8 +79,9 @@ export function registerScheduledJobTools(
     {
       min_minutes: z.coerce.number().optional().describe("Minimum minutes a job has been running/queued (default 30)"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ min_minutes, limit }) => {
+    async ({ min_minutes, limit, offset }) => {
       try {
         const cutoff = new Date(Date.now() - (min_minutes ?? 30) * 60000).toISOString().replace("T", " ").slice(0, 19);
 
@@ -86,6 +91,7 @@ export function registerScheduledJobTools(
             sysparm_query: `stateIN1,2^sys_updated_on<=${cutoff}^ORDERBYsys_updated_on`,
             sysparm_fields: "sys_id,name,state,claimed_by,next_action,run_count,process_duration,sys_updated_on",
             sysparm_limit: limit,
+            sysparm_offset: offset,
             sysparm_display_value: "true",
           }),
           client.query("sys_cluster_state", {
@@ -111,13 +117,15 @@ export function registerScheduledJobTools(
     {
       job_name: z.string().describe("Scheduled job name (exact or contains match)"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 10)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ job_name, limit }) => {
+    async ({ job_name, limit, offset }) => {
       try {
         const result = await client.query("sys_trigger", {
           sysparm_query: `nameLIKE${job_name}^ORDERBYDESCsys_updated_on`,
           sysparm_fields: "sys_id,name,state,claimed_by,next_action,run_count,process_duration,trigger_type,sys_updated_on",
           sysparm_limit: limit ?? 10,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
 

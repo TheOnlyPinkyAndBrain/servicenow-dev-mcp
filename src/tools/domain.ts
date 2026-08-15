@@ -16,8 +16,9 @@ export function registerDomainTools(
       parent: z.string().optional().describe("Parent domain sys_id"),
       active: z.boolean().optional().describe("Active status"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 50)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ parent, active, limit }) => {
+    async ({ parent, active, limit, offset }) => {
       try {
         const qp: string[] = [];
         if (parent) qp.push(`parent=${parent}`);
@@ -28,6 +29,7 @@ export function registerDomainTools(
           sysparm_query: qp.join("^"),
           sysparm_fields: "sys_id,name,parent,active,company,sys_updated_on",
           sysparm_limit: limit ?? 50,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
@@ -43,8 +45,9 @@ export function registerDomainTools(
     {
       user: z.string().describe("User name or sys_id"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ user, limit }) => {
+    async ({ user, limit, offset }) => {
       try {
         const isId = /^[a-f0-9]{32}$/.test(user);
         const query = isId ? `user=${user}` : `user.nameLIKE${user}`;
@@ -53,6 +56,7 @@ export function registerDomainTools(
           sysparm_query: `${query}^ORDERBYdomain`,
           sysparm_fields: "sys_id,user,domain,sys_updated_on",
           sysparm_limit: limit,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
@@ -68,8 +72,9 @@ export function registerDomainTools(
     {
       group: z.string().describe("Group name or sys_id"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ group, limit }) => {
+    async ({ group, limit, offset }) => {
       try {
         const isId = /^[a-f0-9]{32}$/.test(group);
         const query = isId ? `group=${group}` : `group.nameLIKE${group}`;
@@ -78,6 +83,7 @@ export function registerDomainTools(
           sysparm_query: `${query}^ORDERBYdomain`,
           sysparm_fields: "sys_id,group,domain,sys_updated_on",
           sysparm_limit: limit,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
@@ -94,8 +100,9 @@ export function registerDomainTools(
       domain: z.string().optional().describe("Domain sys_id"),
       overrides_table: z.string().optional().describe("Table being overridden (e.g., sys_script, sysevent_email_action)"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ domain, overrides_table, limit }) => {
+    async ({ domain, overrides_table, limit, offset }) => {
       try {
         const qp: string[] = [];
         if (domain) qp.push(`sys_domain=${domain}`);
@@ -106,6 +113,7 @@ export function registerDomainTools(
           sysparm_query: qp.join("^"),
           sysparm_fields: "sys_id,name,base_table,base_record,sys_domain,sys_updated_on",
           sysparm_limit: limit,
+          sysparm_offset: offset,
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
