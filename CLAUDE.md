@@ -7,6 +7,7 @@ A comprehensive MCP (Model Context Protocol) server providing expert-level acces
 ## Architecture
 
 - **Entry point**: `src/index.ts` — creates MCP server, loads config, registers all tool modules
+- **Registry**: `src/tools/registry.ts` — single source of truth for the `registrars` array (every `registerXxxTools`). Both `index.ts` and the contract test import it, so a new module added here is automatically covered by tests. Add new modules to this array.
 - **Client**: `src/client.ts` — `ServiceNowClient` class wrapping ServiceNow Table API, Aggregate API, and generic REST
 - **Config**: `src/config.ts` — loads and validates env vars via Zod
 - **Types**: `src/types.ts` — shared TypeScript types (`Mode`, `ServiceNowConfig`, `QueryParams`, `PaginatedResult`)
@@ -52,7 +53,15 @@ export function registerXxxTools(server: McpServer, client: ServiceNowClient, mo
 npm install && npm run build   # compile TypeScript
 npm start                       # run compiled server
 npm run dev                     # run with tsx (no build needed)
+npm test                        # run the vitest suite
 ```
+
+## Testing
+
+- **Framework**: vitest; tests live in `test/*.test.ts` (not compiled into `dist/` — `tsconfig` is scoped to `src`).
+- **Contract test** (`test/contract.test.ts`): exercises every registrar from `src/tools/registry.ts` with a mock server/client and asserts no duplicate tool names, valid `sn_snake_case` names, non-empty descriptions, valid zod schemas, and mode-gating (debug tools ⊆ develop tools). This runs without a live instance and catches whole classes of registration/schema bugs the TypeScript build cannot.
+- CI runs `npm run build` + `npm test` on Node 20.x and 22.x (required check), plus `npm audit` and OSV-Scanner.
+- No live-instance tests run in CI (no credentials); per-module logic is tested with mocked client responses.
 
 ## Environment Variables
 
