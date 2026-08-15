@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServiceNowClient } from "../../client.js";
 import type { Mode } from "../../types.js";
 import { errorResult, jsonResult } from "../../utils.js";
+import { CREATE, READ } from "../../annotations.js";
 
 export function registerCatalogTools(
   server: McpServer,
@@ -20,6 +21,7 @@ export function registerCatalogTools(
       active: z.boolean().optional().describe("Filter by active status"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
     },
+    READ,
     async ({ title, parent, active, limit }) => {
       try {
         const queryParts: string[] = [];
@@ -60,6 +62,7 @@ export function registerCatalogTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ name, category, active, type, limit, offset }) => {
       try {
         const queryParts: string[] = [];
@@ -95,6 +98,7 @@ export function registerCatalogTools(
     {
       sys_id: z.string().describe("The sys_id of the catalog item"),
     },
+    READ,
     async ({ sys_id }) => {
       try {
         const [item, variables] = await Promise.all([
@@ -124,6 +128,7 @@ export function registerCatalogTools(
     {
       cat_item_sys_id: z.string().describe("The sys_id of the catalog item"),
     },
+    READ,
     async ({ cat_item_sys_id }) => {
       try {
         // Get variable set assignments
@@ -156,6 +161,7 @@ export function registerCatalogTools(
       active: z.boolean().optional().describe("Filter by active status"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
     },
+    READ,
     async ({ cat_item, name, active, limit }) => {
       try {
         const queryParts: string[] = [];
@@ -187,6 +193,7 @@ export function registerCatalogTools(
     {
       sys_id: z.string().describe("The sys_id of the catalog client script"),
     },
+    READ,
     async ({ sys_id }) => {
       try {
         const record = await client.getById("catalog_script_client", sys_id);
@@ -210,6 +217,7 @@ export function registerCatalogTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ cat_item, state, opened_by, query, limit, offset }) => {
       try {
         const queryParts: string[] = [];
@@ -247,6 +255,7 @@ export function registerCatalogTools(
       assignment_group: z.string().optional().describe("Filter by assignment group (name contains match)"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
     },
+    READ,
     async ({ request_item, state, assignment_group, limit }) => {
       try {
         const queryParts: string[] = [];
@@ -273,6 +282,69 @@ export function registerCatalogTools(
     }
   );
 
+  // ========== Requests (REQ header) ==========
+
+  server.tool(
+    "sn_request_list",
+    "List service catalog requests (sc_request) — the REQ header record that groups one or more requested items (RITMs). Use sn_ritm_list for the line items and sn_sc_task_list for fulfillment tasks.",
+    {
+      requested_for: z.string().optional().describe("Filter by requested_for user sys_id"),
+      opened_by: z.string().optional().describe("Filter by opened_by user sys_id"),
+      state: z.string().optional().describe("Filter by request state"),
+      approval: z.string().optional().describe("Filter by approval state (e.g. 'requested', 'approved', 'rejected')"),
+      query: z.string().optional().describe("Additional encoded query"),
+      limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
+    },
+    READ,
+    async ({ requested_for, opened_by, state, approval, query, limit, offset }) => {
+      try {
+        const queryParts: string[] = [];
+        if (requested_for) queryParts.push(`requested_for=${requested_for}`);
+        if (opened_by) queryParts.push(`opened_by=${opened_by}`);
+        if (state) queryParts.push(`request_state=${state}`);
+        if (approval) queryParts.push(`approval=${approval}`);
+        if (query) queryParts.push(query);
+        queryParts.push("ORDERBYDESCsys_created_on");
+        const result = await client.query("sc_request", {
+          sysparm_query: queryParts.join("^"),
+          sysparm_fields: "sys_id,number,requested_for,opened_by,request_state,approval,stage,price,sys_created_on,sys_updated_on",
+          sysparm_limit: limit,
+          sysparm_offset: offset,
+          sysparm_display_value: "true",
+        });
+        return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_request_get",
+    "Get a service catalog request (sc_request) by sys_id, together with its requested items (sc_req_item).",
+    {
+      sys_id: z.string().describe("The sys_id of the request (sc_request)"),
+    },
+    READ,
+    async ({ sys_id }) => {
+      try {
+        const [request, items] = await Promise.all([
+          client.getById("sc_request", sys_id),
+          client.query("sc_req_item", {
+            sysparm_query: `request=${sys_id}^ORDERBYnumber`,
+            sysparm_fields: "sys_id,number,cat_item,state,stage,short_description,assigned_to,assignment_group,price",
+            sysparm_limit: 100,
+            sysparm_display_value: "true",
+          }),
+        ]);
+        return jsonResult({ request, requestedItems: items.records, requestedItemCount: items.totalCount });
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
   // ========== Ordering (Service Catalog API) ==========
   // Write tools — only in develop mode
   if (mode !== "develop") return;
@@ -285,6 +357,7 @@ export function registerCatalogTools(
       quantity: z.coerce.number().min(1).optional().describe("Quantity to order (default 1)"),
       variables: z.record(z.string(), z.unknown()).optional().describe("Variable values keyed by variable name, e.g. { justification: 'new hire', size: 'large' }"),
     },
+    CREATE,
     async ({ cat_item_sys_id, quantity, variables }) => {
       try {
         const body: Record<string, unknown> = {
@@ -311,6 +384,7 @@ export function registerCatalogTools(
       quantity: z.coerce.number().min(1).optional().describe("Quantity to add (default 1)"),
       variables: z.record(z.string(), z.unknown()).optional().describe("Variable values keyed by variable name"),
     },
+    CREATE,
     async ({ cat_item_sys_id, quantity, variables }) => {
       try {
         const body: Record<string, unknown> = {
@@ -333,6 +407,7 @@ export function registerCatalogTools(
     "sn_catalog_cart_get",
     "Get the current user's catalog cart contents via the Service Catalog API (GET /api/sn_sc/servicecatalog/cart). Shows items staged for checkout.",
     {},
+    READ,
     async () => {
       try {
         const result = await client.restApi("GET", "/api/sn_sc/servicecatalog/cart");
@@ -347,6 +422,7 @@ export function registerCatalogTools(
     "sn_catalog_cart_submit",
     "Submit the current user's cart as an order via the Service Catalog API (POST /api/sn_sc/servicecatalog/cart/submit_order). Creates the request (REQ) from all staged cart items.",
     {},
+    CREATE,
     async () => {
       try {
         const result = await client.restApi(
