@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServiceNowClient } from "../../client.js";
 import type { Mode } from "../../types.js";
 import { errorResult, jsonResult } from "../../utils.js";
+import { READ } from "../../annotations.js";
 
 export function registerServicePortalTools(
   server: McpServer,
@@ -18,6 +19,7 @@ export function registerServicePortalTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ title, active, limit, offset }) => {
       try {
         const qp: string[] = [];
@@ -48,6 +50,7 @@ export function registerServicePortalTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ title, id, limit, offset }) => {
       try {
         const qp: string[] = [];
@@ -79,6 +82,7 @@ export function registerServicePortalTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ name, id, category, limit, offset }) => {
       try {
         const qp: string[] = [];
@@ -107,6 +111,7 @@ export function registerServicePortalTools(
     {
       sys_id: z.string().describe("Widget sys_id"),
     },
+    READ,
     async ({ sys_id }) => {
       try {
         const [widget, instances] = await Promise.all([
@@ -133,6 +138,7 @@ export function registerServicePortalTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ name, limit, offset }) => {
       try {
         const qp: string[] = [];
@@ -162,6 +168,7 @@ export function registerServicePortalTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ name, type, limit, offset }) => {
       try {
         const qp: string[] = [];

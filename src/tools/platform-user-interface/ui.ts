@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServiceNowClient } from "../../client.js";
 import type { Mode } from "../../types.js";
 import { errorResult, jsonResult } from "../../utils.js";
+import { READ } from "../../annotations.js";
 
 export function registerUiTools(
   server: McpServer,
@@ -20,6 +21,7 @@ export function registerUiTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ name, category, limit, offset }) => {
       try {
         const queryParts: string[] = [];
@@ -51,6 +53,7 @@ export function registerUiTools(
     {
       sys_id: z.string().describe("The sys_id of the UI Page"),
     },
+    READ,
     async ({ sys_id }) => {
       try {
         const record = await client.getById("sys_ui_page", sys_id);
@@ -70,6 +73,7 @@ export function registerUiTools(
       name: z.string().optional().describe("Filter by macro name (contains match)"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
     },
+    READ,
     async ({ name, limit }) => {
       try {
         const queryParts: string[] = [];
@@ -104,6 +108,7 @@ export function registerUiTools(
       global: z.boolean().optional().describe("Filter by global flag"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
     },
+    READ,
     async ({ name, active, global: isGlobal, limit }) => {
       try {
         const queryParts: string[] = [];
@@ -135,6 +140,7 @@ export function registerUiTools(
     {
       sys_id: z.string().describe("The sys_id of the UI Script"),
     },
+    READ,
     async ({ sys_id }) => {
       try {
         const record = await client.getById("sys_ui_script", sys_id);
@@ -154,6 +160,7 @@ export function registerUiTools(
       table: z.string().describe("Table name, e.g. 'incident'"),
       view: z.string().optional().describe("Filter by view name (default view if not specified)"),
     },
+    READ,
     async ({ table, view }) => {
       try {
         const queryParts: string[] = [`name=${table}`];
@@ -185,6 +192,7 @@ export function registerUiTools(
       table: z.string().describe("Table name, e.g. 'incident'"),
       view: z.string().optional().describe("View name (default view if not specified)"),
     },
+    READ,
     async ({ table, view }) => {
       try {
         const queryParts: string[] = [`name=${table}`];
@@ -216,6 +224,7 @@ export function registerUiTools(
       table: z.string().describe("Table name, e.g. 'incident'"),
       view: z.string().optional().describe("View name"),
     },
+    READ,
     async ({ table, view }) => {
       try {
         const queryParts: string[] = [`list_id=${table}`];
@@ -240,149 +249,30 @@ export function registerUiTools(
     }
   );
 
-  // ========== Service Portal ==========
-
   server.tool(
-    "sn_sp_portal_list",
-    "List Service Portals (sp_portal). Shows portal configuration and settings.",
+    "sn_ui_view_list",
+    "List form/list views (sys_ui_view) — named alternate layouts (e.g. 'Default view', 'ESS', 'ess') that tables can present.",
     {
-      title: z.string().optional().describe("Filter by portal title (contains match)"),
-      limit: z.coerce.number().min(1).max(50).optional().describe("Max records (default 20)"),
-    },
-    async ({ title, limit }) => {
-      try {
-        const queryParts: string[] = [];
-        if (title) queryParts.push(`titleLIKE${title}`);
-        queryParts.push("ORDERBYtitle");
-
-        const result = await client.query("sp_portal", {
-          sysparm_query: queryParts.join("^"),
-          sysparm_fields: "sys_id,title,url_suffix,css,quick_start_enabled,theme,logo,sys_updated_on",
-          sysparm_limit: limit,
-          sysparm_display_value: "true",
-        });
-
-        return jsonResult({
-          totalCount: result.totalCount,
-          count: result.records.length,
-          records: result.records,
-        });
-      } catch (error) {
-        return errorResult(error);
-      }
-    }
-  );
-
-  server.tool(
-    "sn_sp_widget_list",
-    "List Service Portal widgets (sp_widget). Widgets are the building blocks of Service Portal pages.",
-    {
-      name: z.string().optional().describe("Filter by widget name (contains match)"),
-      id: z.string().optional().describe("Filter by widget ID (exact match)"),
+      name: z.string().optional().describe("Filter by view name (contains match)"),
+      title: z.string().optional().describe("Filter by view title (contains match)"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
-    async ({ name, id, limit, offset }) => {
+    READ,
+    async ({ name, title, limit, offset }) => {
       try {
         const queryParts: string[] = [];
         if (name) queryParts.push(`nameLIKE${name}`);
-        if (id) queryParts.push(`id=${id}`);
+        if (title) queryParts.push(`titleLIKE${title}`);
         queryParts.push("ORDERBYname");
-
-        const result = await client.query("sp_widget", {
+        const result = await client.query("sys_ui_view", {
           sysparm_query: queryParts.join("^"),
-          sysparm_fields: "sys_id,name,id,template,css,data_table,sys_scope,sys_updated_on",
+          sysparm_fields: "sys_id,name,title,hidden,roles,sys_updated_on",
           sysparm_limit: limit,
           sysparm_offset: offset,
+          sysparm_display_value: "true",
         });
-
-        return jsonResult({
-          totalCount: result.totalCount,
-          count: result.records.length,
-          records: result.records,
-        });
-      } catch (error) {
-        return errorResult(error);
-      }
-    }
-  );
-
-  server.tool(
-    "sn_sp_widget_get",
-    "Get full Service Portal widget details including HTML template, CSS, client script, server script, and link function",
-    {
-      sys_id: z.string().describe("The sys_id of the widget"),
-    },
-    async ({ sys_id }) => {
-      try {
-        const record = await client.getById("sp_widget", sys_id);
-        return jsonResult(record);
-      } catch (error) {
-        return errorResult(error);
-      }
-    }
-  );
-
-  server.tool(
-    "sn_sp_page_list",
-    "List Service Portal pages (sp_page)",
-    {
-      title: z.string().optional().describe("Filter by page title (contains match)"),
-      id: z.string().optional().describe("Filter by page ID (contains match)"),
-      limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
-    },
-    async ({ title, id, limit }) => {
-      try {
-        const queryParts: string[] = [];
-        if (title) queryParts.push(`titleLIKE${title}`);
-        if (id) queryParts.push(`idLIKE${id}`);
-        queryParts.push("ORDERBYtitle");
-
-        const result = await client.query("sp_page", {
-          sysparm_query: queryParts.join("^"),
-          sysparm_fields: "sys_id,title,id,description,internal,draft,sys_updated_on",
-          sysparm_limit: limit,
-        });
-
-        return jsonResult({
-          totalCount: result.totalCount,
-          count: result.records.length,
-          records: result.records,
-        });
-      } catch (error) {
-        return errorResult(error);
-      }
-    }
-  );
-
-  // ========== Angular Providers (Service Portal) ==========
-
-  server.tool(
-    "sn_sp_angular_provider_list",
-    "List Service Portal Angular providers (sp_angular_provider) — services, factories, directives, and filters used in widgets",
-    {
-      name: z.string().optional().describe("Filter by provider name (contains match)"),
-      type: z.enum(["service", "factory", "directive", "filter"]).optional().describe("Filter by provider type"),
-      limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
-    },
-    async ({ name, type, limit }) => {
-      try {
-        const queryParts: string[] = [];
-        if (name) queryParts.push(`nameLIKE${name}`);
-        if (type) queryParts.push(`type=${type}`);
-        queryParts.push("ORDERBYname");
-
-        const result = await client.query("sp_angular_provider", {
-          sysparm_query: queryParts.join("^"),
-          sysparm_fields: "sys_id,name,type,sys_scope,sys_updated_on",
-          sysparm_limit: limit,
-        });
-
-        return jsonResult({
-          totalCount: result.totalCount,
-          count: result.records.length,
-          records: result.records,
-        });
+        return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
       } catch (error) {
         return errorResult(error);
       }

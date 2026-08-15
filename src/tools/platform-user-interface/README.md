@@ -2,7 +2,7 @@
 
 UI policies/actions/pages and Service Portal.
 
-**Module folder:** `src/tools/platform-user-interface/` · **Files:** 3 · **Tools:** 26
+**Module folder:** `src/tools/platform-user-interface/` · **Files:** 3 · **Tools:** 22
 
 Read-only tools (`both`) work in `debug` and `develop` modes; `develop` tools require `SERVICENOW_MODE=develop`.
 
@@ -17,11 +17,6 @@ Read-only tools (`both`) work in `debug` and `develop` modes; `develop` tools re
 | `sn_portal_widget_get` | both | Get full widget details including HTML template, client script, server script, and CSS |
 | `sn_portal_widget_list` | both | List Service Portal widgets (sp_widget) |
 | `sn_related_lists` | both | List related lists configured for a table (sys_ui_related_list_entry). Shows which related lists appear on a form. |
-| `sn_sp_angular_provider_list` | both | List Service Portal Angular providers (sp_angular_provider) — services, factories, directives, and filters used in widgets |
-| `sn_sp_page_list` | both | List Service Portal pages (sp_page) |
-| `sn_sp_portal_list` | both | List Service Portals (sp_portal). Shows portal configuration and settings. |
-| `sn_sp_widget_get` | both | Get full Service Portal widget details including HTML template, CSS, client script, server script, and link function |
-| `sn_sp_widget_list` | both | List Service Portal widgets (sp_widget). Widgets are the building blocks of Service Portal pages. |
 | `sn_ui_action_get` | both | Get full UI Action details (sys_ui_action) including script and conditions |
 | `sn_ui_action_list` | both | List UI Actions (sys_ui_action) — buttons, links, context menus — filtered by table |
 | `sn_ui_macro_list` | both | List UI Macros (sys_ui_macro) — reusable Jelly template components |
@@ -34,6 +29,7 @@ Read-only tools (`both`) work in `debug` and `develop` modes; `develop` tools re
 | `sn_ui_policy_update` | develop | Update an existing UI Policy (sys_ui_policy) |
 | `sn_ui_script_get` | both | Get full UI Script details including source code |
 | `sn_ui_script_list` | both | List UI Scripts (sys_ui_script) — global client-side JavaScript libraries loaded on pages |
+| `sn_ui_view_list` | both | List form/list views (sys_ui_view) — named alternate layouts (e.g. 'Default view', 'ESS', 'ess') that tables can present. |
 
 ---
 
