@@ -170,7 +170,7 @@ export function registerHrsdTools(
       opened_for: z.string().optional().describe("Opened for user sys_id"),
       subject_person: z.string().optional().describe("Subject person sys_id"),
       assignment_group: z.string().optional().describe("Assignment group sys_id"),
-      additional_fields: z.record(z.unknown()).optional().describe("Additional fields"),
+      additional_fields: z.record(z.string(), z.unknown()).optional().describe("Additional fields"),
     },
     async ({ short_description, hr_service, opened_for, subject_person, assignment_group, additional_fields }) => {
       try {
@@ -192,7 +192,7 @@ export function registerHrsdTools(
     "Update an HR case",
     {
       sys_id: z.string().describe("HR case sys_id"),
-      fields: z.record(z.unknown()).describe("Fields to update"),
+      fields: z.record(z.string(), z.unknown()).describe("Fields to update"),
     },
     async ({ sys_id, fields }) => {
       try {

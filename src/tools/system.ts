@@ -74,8 +74,8 @@ export function registerSystemTools(
   // ========== Scheduled Jobs ==========
 
   server.tool(
-    "sn_scheduled_job_list",
-    "List scheduled jobs (sys_trigger). Shows job name, next action time, state, trigger type. Useful for debugging timing-related issues.",
+    "sn_sys_trigger_list",
+    "List scheduled job triggers (sys_trigger). Shows job name, next action time, state, trigger type. Useful for debugging timing-related issues. For scheduled job definitions see sn_scheduled_job_list.",
     {
       name: z.string().optional().describe("Filter by job name (contains match)"),
       state: z.enum(["0", "1", "2"]).optional().describe("Filter by state: 0=Ready, 1=Processing, 2=Complete"),
@@ -111,8 +111,8 @@ export function registerSystemTools(
   );
 
   server.tool(
-    "sn_scheduled_job_get",
-    "Get full scheduled job details by sys_id",
+    "sn_sys_trigger_get",
+    "Get full scheduled job trigger details by sys_id (sys_trigger)",
     {
       sys_id: z.string().describe("The sys_id of the scheduled job"),
     },

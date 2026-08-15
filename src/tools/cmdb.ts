@@ -174,7 +174,7 @@ export function registerCmdbTools(
     "Create a Configuration Item via the CMDB Instance API (POST /api/now/cmdb/instance/{class}). This routes through the Identification and Reconciliation Engine (IRE), so it deduplicates against existing CIs instead of blindly inserting. Prefer this over sn_table_create for CIs.",
     {
       ci_class: z.string().describe("The CI class table name, e.g. 'cmdb_ci_linux_server'"),
-      attributes: z.record(z.unknown()).describe("CI field values, e.g. { name: 'web01', ip_address: '10.0.0.1', serial_number: 'ABC123' }"),
+      attributes: z.record(z.string(), z.unknown()).describe("CI field values, e.g. { name: 'web01', ip_address: '10.0.0.1', serial_number: 'ABC123' }"),
       source: z.string().describe("Required. The discovery/data source for the record — must be a valid 'discovery_source' choice value on the instance, e.g. 'ServiceNow'. The CMDB Instance API rejects the call without it."),
     },
     async ({ ci_class, attributes, source }) => {
@@ -198,7 +198,7 @@ export function registerCmdbTools(
     {
       ci_class: z.string().describe("The CI class table name, e.g. 'cmdb_ci_linux_server'"),
       sys_id: z.string().describe("The sys_id of the CI to update"),
-      attributes: z.record(z.unknown()).describe("CI field values to update, e.g. { operational_status: '1', comments: 'updated' }"),
+      attributes: z.record(z.string(), z.unknown()).describe("CI field values to update, e.g. { operational_status: '1', comments: 'updated' }"),
       source: z.string().describe("Required. The discovery/data source for the update — must be a valid 'discovery_source' choice value on the instance, e.g. 'ServiceNow'."),
     },
     async ({ ci_class, sys_id, attributes, source }) => {
@@ -220,8 +220,8 @@ export function registerCmdbTools(
     "sn_cmdb_identify_reconcile",
     "Create or update CIs and their relationships through the Identification and Reconciliation API (POST /api/now/identifyreconcile). This is the supported way to write CMDB data from an external source: IRE matches on identification rules to avoid duplicate CIs and enforces reconciliation. Use for bulk/multi-CI payloads with relations.",
     {
-      items: z.array(z.record(z.unknown())).describe("Array of CI payloads. Each item: { className: 'cmdb_ci_linux_server', values: { name, ip_address, ... }, sys_object_source_info?: { source, source_native_key } }"),
-      relations: z.array(z.record(z.unknown())).optional().describe("Optional relationships between items, e.g. [{ type: 'Runs on::Runs', parent: 0, child: 1 }] where parent/child index into items"),
+      items: z.array(z.record(z.string(), z.unknown())).describe("Array of CI payloads. Each item: { className: 'cmdb_ci_linux_server', values: { name, ip_address, ... }, sys_object_source_info?: { source, source_native_key } }"),
+      relations: z.array(z.record(z.string(), z.unknown())).optional().describe("Optional relationships between items, e.g. [{ type: 'Runs on::Runs', parent: 0, child: 1 }] where parent/child index into items"),
       data_source: z.string().optional().describe("Value for sysparm_data_source query param identifying the writing source"),
     },
     async ({ items, relations, data_source }) => {

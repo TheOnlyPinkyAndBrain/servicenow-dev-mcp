@@ -297,7 +297,7 @@ export function registerConfigItemTools(
     "Create a new ACL",
     {
       data: z
-        .record(z.unknown())
+        .record(z.string(), z.unknown())
         .describe("Field-value pairs for the new ACL"),
     },
     async ({ data }) => {
@@ -319,7 +319,7 @@ export function registerConfigItemTools(
     {
       sys_id: z.string().describe("The sys_id of the ACL to update"),
       data: z
-        .record(z.unknown())
+        .record(z.string(), z.unknown())
         .describe("Field-value pairs to update"),
     },
     async ({ sys_id, data }) => {
@@ -340,7 +340,7 @@ export function registerConfigItemTools(
     "Create a new UI Policy",
     {
       data: z
-        .record(z.unknown())
+        .record(z.string(), z.unknown())
         .describe("Field-value pairs for the new UI Policy"),
     },
     async ({ data }) => {
@@ -362,7 +362,7 @@ export function registerConfigItemTools(
     {
       sys_id: z.string().describe("The sys_id of the UI Policy to update"),
       data: z
-        .record(z.unknown())
+        .record(z.string(), z.unknown())
         .describe("Field-value pairs to update"),
     },
     async ({ sys_id, data }) => {

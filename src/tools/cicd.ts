@@ -106,7 +106,7 @@ export function registerCicdTools(
   );
 
   server.tool(
-    "sn_app_list",
+    "sn_installed_app_list",
     "List installed applications (sys_store_app and sys_app)",
     {
       name: z.string().optional().describe("App name (contains match)"),

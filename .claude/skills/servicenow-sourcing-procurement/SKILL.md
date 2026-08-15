@@ -224,7 +224,7 @@ export function registerXxxTools(server: McpServer, client: ServiceNowClient, mo
     "Create a new xxx record.",
     {
       name: z.string().describe("Name of the record"),
-      additional_fields: z.record(z.unknown()).optional().describe("Additional fields"),
+      additional_fields: z.record(z.string(), z.unknown()).optional().describe("Additional fields"),
     },
     async ({ name, additional_fields }) => {
       try {

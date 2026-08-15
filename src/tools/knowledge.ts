@@ -178,7 +178,7 @@ export function registerKnowledgeTools(
       kb_knowledge_base: z.string().describe("Knowledge base sys_id"),
       kb_category: z.string().optional().describe("Category sys_id"),
       workflow_state: z.enum(["draft", "review", "published"]).optional().describe("Workflow state (default draft)"),
-      additional_fields: z.record(z.unknown()).optional().describe("Additional fields"),
+      additional_fields: z.record(z.string(), z.unknown()).optional().describe("Additional fields"),
     },
     async ({ short_description, text, kb_knowledge_base, kb_category, workflow_state, additional_fields }) => {
       try {
@@ -198,7 +198,7 @@ export function registerKnowledgeTools(
     "Update a knowledge article",
     {
       sys_id: z.string().describe("Article sys_id"),
-      fields: z.record(z.unknown()).describe("Fields to update"),
+      fields: z.record(z.string(), z.unknown()).describe("Fields to update"),
     },
     async ({ sys_id, fields }) => {
       try {

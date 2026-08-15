@@ -1176,7 +1176,7 @@ export function registerS2pTools(
       tax_id: z.string().optional().describe("Tax ID"),
       duns: z.string().optional().describe("DUNS number"),
       gl_account: z.string().optional().describe("GL account sys_id"),
-      additional_fields: z.record(z.unknown()).optional().describe("Additional fields"),
+      additional_fields: z.record(z.string(), z.unknown()).optional().describe("Additional fields"),
     },
     async ({ related_company, registration_country, tax_id, duns, gl_account, additional_fields }) => {
       try {
@@ -1199,7 +1199,7 @@ export function registerS2pTools(
     "Update an S2P supplier (sn_fin_supplier).",
     {
       sys_id: z.string().describe("The sys_id of the supplier"),
-      fields: z.record(z.unknown()).describe("Fields to update"),
+      fields: z.record(z.string(), z.unknown()).describe("Fields to update"),
     },
     async ({ sys_id, fields }) => {
       try {
@@ -1222,7 +1222,7 @@ export function registerS2pTools(
       cost_center: z.string().optional().describe("Cost center sys_id"),
       payment_term: z.string().optional().describe("Payment term sys_id"),
       expected_delivery: z.string().optional().describe("Expected delivery date (YYYY-MM-DD)"),
-      additional_fields: z.record(z.unknown()).optional().describe("Additional fields"),
+      additional_fields: z.record(z.string(), z.unknown()).optional().describe("Additional fields"),
     },
     async ({ supplier, display_name, purchasing_entity, legal_entity, cost_center, payment_term, expected_delivery, additional_fields }) => {
       try {
@@ -1247,7 +1247,7 @@ export function registerS2pTools(
     "Update an S2P purchase order (sn_shop_purchase_order).",
     {
       sys_id: z.string().describe("The sys_id of the purchase order"),
-      fields: z.record(z.unknown()).describe("Fields to update"),
+      fields: z.record(z.string(), z.unknown()).describe("Fields to update"),
     },
     async ({ sys_id, fields }) => {
       try {
@@ -1264,7 +1264,7 @@ export function registerS2pTools(
     "Update an S2P invoice (sn_shop_invoice).",
     {
       sys_id: z.string().describe("The sys_id of the invoice"),
-      fields: z.record(z.unknown()).describe("Fields to update"),
+      fields: z.record(z.string(), z.unknown()).describe("Fields to update"),
     },
     async ({ sys_id, fields }) => {
       try {

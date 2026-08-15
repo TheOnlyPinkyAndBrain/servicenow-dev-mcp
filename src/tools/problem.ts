@@ -123,7 +123,7 @@ export function registerProblemTools(
       urgency: z.enum(["1", "2", "3"]).optional().describe("Urgency"),
       assignment_group: z.string().optional().describe("Assignment group sys_id"),
       first_reported_by_task: z.string().optional().describe("First reported by task sys_id (e.g., incident)"),
-      additional_fields: z.record(z.unknown()).optional().describe("Additional fields"),
+      additional_fields: z.record(z.string(), z.unknown()).optional().describe("Additional fields"),
     },
     async ({ short_description, description, category, impact, urgency, assignment_group, first_reported_by_task, additional_fields }) => {
       try {
@@ -147,7 +147,7 @@ export function registerProblemTools(
     "Update an existing problem record",
     {
       sys_id: z.string().describe("Problem sys_id"),
-      fields: z.record(z.unknown()).describe("Field values to update"),
+      fields: z.record(z.string(), z.unknown()).describe("Field values to update"),
     },
     async ({ sys_id, fields }) => {
       try {

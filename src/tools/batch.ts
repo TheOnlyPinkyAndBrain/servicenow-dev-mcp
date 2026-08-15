@@ -17,7 +17,7 @@ export function registerBatchTools(
         id: z.string().describe("Unique request identifier"),
         url: z.string().describe("API path (e.g., '/api/now/table/incident?sysparm_limit=1')"),
         method: z.enum(["GET", "POST", "PUT", "PATCH", "DELETE"]).describe("HTTP method"),
-        body: z.record(z.unknown()).optional().describe("Request body for POST/PUT/PATCH"),
+        body: z.record(z.string(), z.unknown()).optional().describe("Request body for POST/PUT/PATCH"),
       })).describe("Array of REST API requests to execute in batch"),
     },
     async ({ requests }) => {
