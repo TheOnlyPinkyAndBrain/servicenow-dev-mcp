@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServiceNowClient } from "../../client.js";
 import type { Mode } from "../../types.js";
 import { errorResult, jsonResult } from "../../utils.js";
+import { READ } from "../../annotations.js";
 
 export function registerIntegrationTools(
   server: McpServer,
@@ -18,6 +19,7 @@ export function registerIntegrationTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ name, active, limit, offset }) => {
       try {
         const qp: string[] = [];
@@ -45,6 +47,7 @@ export function registerIntegrationTools(
     {
       rest_message: z.string().describe("REST message sys_id"),
     },
+    READ,
     async ({ rest_message }) => {
       try {
         const result = await client.query("sys_rest_message_fn", {
@@ -72,6 +75,7 @@ export function registerIntegrationTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ state, queue, topic, agent, created_after, limit, offset }) => {
       try {
         const qp: string[] = [];
@@ -104,6 +108,7 @@ export function registerIntegrationTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ min_minutes, limit, offset }) => {
       try {
         const cutoff = new Date(Date.now() - (min_minutes ?? 15) * 60000).toISOString().replace("T", " ").slice(0, 19);
@@ -131,6 +136,7 @@ export function registerIntegrationTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ status, name, limit, offset }) => {
       try {
         const qp: string[] = [];
@@ -163,6 +169,7 @@ export function registerIntegrationTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ url, status, http_method, created_after, limit, offset }) => {
       try {
         const qp: string[] = [];
@@ -196,6 +203,7 @@ export function registerIntegrationTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ flow, action, status, created_after, limit, offset }) => {
       try {
         const qp: string[] = [];
@@ -208,6 +216,68 @@ export function registerIntegrationTools(
         const result = await client.query("sys_hub_action_instance", {
           sysparm_query: qp.join("^"),
           sysparm_fields: "sys_id,flow,action,status,started,ended,error_message,sys_created_on",
+          sysparm_limit: limit,
+          sysparm_offset: offset,
+          sysparm_display_value: "true",
+        });
+        return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_soap_message_list",
+    "List outbound SOAP messages (sys_soap_message) — configured SOAP web-service integrations, with their WSDL and authentication type.",
+    {
+      name: z.string().optional().describe("Filter by name (contains match)"),
+      query: z.string().optional().describe("Additional encoded query"),
+      limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
+    },
+    READ,
+    async ({ name, query, limit, offset }) => {
+      try {
+        const queryParts: string[] = [];
+        if (name) queryParts.push(`nameLIKE${name}`);
+        if (query) queryParts.push(query);
+        queryParts.push("ORDERBYname");
+        const result = await client.query("sys_soap_message", {
+          sysparm_query: queryParts.join("^"),
+          sysparm_fields: "sys_id,name,description,wsdl,authentication_type,access,sys_updated_on",
+          sysparm_limit: limit,
+          sysparm_offset: offset,
+          sysparm_display_value: "true",
+        });
+        return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_web_service_list",
+    "List inbound SOAP web services (sys_web_service) — scripted SOAP endpoints exposed by the instance.",
+    {
+      name: z.string().optional().describe("Filter by name (contains match)"),
+      active: z.boolean().optional().describe("Filter by active status"),
+      query: z.string().optional().describe("Additional encoded query"),
+      limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
+    },
+    READ,
+    async ({ name, active, query, limit, offset }) => {
+      try {
+        const queryParts: string[] = [];
+        if (name) queryParts.push(`nameLIKE${name}`);
+        if (active !== undefined) queryParts.push(`active=${active}`);
+        if (query) queryParts.push(query);
+        queryParts.push("ORDERBYname");
+        const result = await client.query("sys_web_service", {
+          sysparm_query: queryParts.join("^"),
+          sysparm_fields: "sys_id,name,function_name,short_description,active,sys_updated_on",
           sysparm_limit: limit,
           sysparm_offset: offset,
           sysparm_display_value: "true",

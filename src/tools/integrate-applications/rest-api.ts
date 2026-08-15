@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServiceNowClient } from "../../client.js";
 import type { Mode } from "../../types.js";
 import { errorResult, jsonResult } from "../../utils.js";
+import { CREATE, READ, UPDATE } from "../../annotations.js";
 
 export function registerRestApiTools(
   server: McpServer,
@@ -19,6 +20,7 @@ export function registerRestApiTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ name, namespace, active, limit, offset }) => {
       try {
         const queryParts: string[] = [];
@@ -52,6 +54,7 @@ export function registerRestApiTools(
     {
       sys_id: z.string().describe("The sys_id of the Scripted REST API"),
     },
+    READ,
     async ({ sys_id }) => {
       try {
         const [api, resources] = await Promise.all([
@@ -80,6 +83,7 @@ export function registerRestApiTools(
     {
       sys_id: z.string().describe("The sys_id of the REST API resource"),
     },
+    READ,
     async ({ sys_id }) => {
       try {
         const record = await client.getById("sys_ws_operation", sys_id);
@@ -98,6 +102,7 @@ export function registerRestApiTools(
     {
       data: z.record(z.string(), z.unknown()).describe("Field-value pairs (name, namespace, short_description, etc.)"),
     },
+    CREATE,
     async ({ data }) => {
       try {
         const record = await client.create("sys_ws_definition", data);
@@ -114,6 +119,7 @@ export function registerRestApiTools(
     {
       data: z.record(z.string(), z.unknown()).describe("Field-value pairs (name, http_method, relative_path, operation_script, web_service_definition, etc.)"),
     },
+    CREATE,
     async ({ data }) => {
       try {
         const record = await client.create("sys_ws_operation", data);
@@ -131,6 +137,7 @@ export function registerRestApiTools(
       sys_id: z.string().describe("The sys_id of the resource to update"),
       data: z.record(z.string(), z.unknown()).describe("Field-value pairs to update"),
     },
+    UPDATE,
     async ({ sys_id, data }) => {
       try {
         const record = await client.update("sys_ws_operation", sys_id, data);

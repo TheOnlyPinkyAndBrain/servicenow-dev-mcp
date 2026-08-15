@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServiceNowClient } from "../../client.js";
 import type { Mode } from "../../types.js";
 import { errorResult, jsonResult } from "../../utils.js";
+import { READ } from "../../annotations.js";
 
 export function registerImportSetTools(
   server: McpServer,
@@ -18,6 +19,7 @@ export function registerImportSetTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ table_name, state, limit, offset }) => {
       try {
         const queryParts: string[] = [];
@@ -52,6 +54,7 @@ export function registerImportSetTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ import_set, state, limit, offset }) => {
       try {
         // First get the import set to know the table
@@ -100,6 +103,7 @@ export function registerImportSetTools(
       active: z.boolean().optional().describe("Filter by active status"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
     },
+    READ,
     async ({ source_table, target_table, name, active, limit }) => {
       try {
         const queryParts: string[] = [];
@@ -132,6 +136,7 @@ export function registerImportSetTools(
     {
       sys_id: z.string().describe("The sys_id of the transform map"),
     },
+    READ,
     async ({ sys_id }) => {
       try {
         const [map, entries] = await Promise.all([
@@ -160,6 +165,7 @@ export function registerImportSetTools(
     {
       transform_map_sys_id: z.string().describe("The sys_id of the transform map"),
     },
+    READ,
     async ({ transform_map_sys_id }) => {
       try {
         const result = await client.query("sys_transform_script", {
@@ -173,6 +179,70 @@ export function registerImportSetTools(
           count: result.records.length,
           scripts: result.records,
         });
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_data_source_list",
+    "List data sources (sys_data_source) — the import connectors (file, JDBC, REST, LDAP) that feed import set tables.",
+    {
+      name: z.string().optional().describe("Filter by name (contains match)"),
+      type: z.string().optional().describe("Filter by source type (e.g. 'File', 'JDBC', 'REST')"),
+      query: z.string().optional().describe("Additional encoded query"),
+      limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
+    },
+    READ,
+    async ({ name, type, query, limit, offset }) => {
+      try {
+        const queryParts: string[] = [];
+        if (name) queryParts.push(`nameLIKE${name}`);
+        if (type) queryParts.push(`type=${type}`);
+        if (query) queryParts.push(query);
+        queryParts.push("ORDERBYname");
+        const result = await client.query("sys_data_source", {
+          sysparm_query: queryParts.join("^"),
+          sysparm_fields: "sys_id,name,type,format,import_set_table_name,file_retrieval_method,mid_server,last_run_datetime,sys_updated_on",
+          sysparm_limit: limit,
+          sysparm_offset: offset,
+          sysparm_display_value: "true",
+        });
+        return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_scheduled_import_list",
+    "List scheduled data imports (scheduled_import_set) — recurring jobs that pull from a data source and run a transform map.",
+    {
+      name: z.string().optional().describe("Filter by name (contains match)"),
+      active: z.boolean().optional().describe("Filter by active status"),
+      query: z.string().optional().describe("Additional encoded query"),
+      limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
+    },
+    READ,
+    async ({ name, active, query, limit, offset }) => {
+      try {
+        const queryParts: string[] = [];
+        if (name) queryParts.push(`nameLIKE${name}`);
+        if (active !== undefined) queryParts.push(`active=${active}`);
+        if (query) queryParts.push(query);
+        queryParts.push("ORDERBYname");
+        const result = await client.query("scheduled_import_set", {
+          sysparm_query: queryParts.join("^"),
+          sysparm_fields: "sys_id,name,data_source,map,active,run_type,record_source,sys_updated_on",
+          sysparm_limit: limit,
+          sysparm_offset: offset,
+          sysparm_display_value: "true",
+        });
+        return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
       } catch (error) {
         return errorResult(error);
       }
