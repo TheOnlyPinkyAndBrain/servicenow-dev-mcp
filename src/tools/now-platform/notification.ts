@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServiceNowClient } from "../../client.js";
 import type { Mode } from "../../types.js";
 import { errorResult, jsonResult } from "../../utils.js";
+import { READ } from "../../annotations.js";
 
 export function registerNotificationTools(
   server: McpServer,
@@ -20,6 +21,7 @@ export function registerNotificationTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ table, name, event_name, active, limit, offset }) => {
       try {
         const queryParts: string[] = [];
@@ -54,6 +56,7 @@ export function registerNotificationTools(
     {
       sys_id: z.string().describe("The sys_id of the notification"),
     },
+    READ,
     async ({ sys_id }) => {
       try {
         const record = await client.getById("sysevent_email_action", sys_id);
@@ -77,6 +80,7 @@ export function registerNotificationTools(
       end_time: z.string().optional().describe("End of time range"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
     },
+    READ,
     async ({ recipient, subject, type, state, instance, start_time, end_time, limit }) => {
       try {
         const queryParts: string[] = [];
@@ -118,6 +122,7 @@ export function registerNotificationTools(
       end_time: z.string().optional().describe("End of time range"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
     },
+    READ,
     async ({ name, table, state, instance, start_time, end_time, limit }) => {
       try {
         const queryParts: string[] = [];
@@ -140,6 +145,38 @@ export function registerNotificationTools(
           count: result.records.length,
           records: result.records,
         });
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_event_registry_list",
+    "List registered system events (sysevent_register) — the event names a table can fire (used by notifications, flows, and business rules).",
+    {
+      event_name: z.string().optional().describe("Filter by event name (contains match)"),
+      table: z.string().optional().describe("Filter by the table that fires the event"),
+      query: z.string().optional().describe("Additional encoded query"),
+      limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
+    },
+    READ,
+    async ({ event_name, table, query, limit, offset }) => {
+      try {
+        const queryParts: string[] = [];
+        if (event_name) queryParts.push(`event_nameLIKE${event_name}`);
+        if (table) queryParts.push(`table=${table}`);
+        if (query) queryParts.push(query);
+        queryParts.push("ORDERBYevent_name");
+        const result = await client.query("sysevent_register", {
+          sysparm_query: queryParts.join("^"),
+          sysparm_fields: "sys_id,event_name,table,description,queue,fired_by,sys_updated_on",
+          sysparm_limit: limit,
+          sysparm_offset: offset,
+          sysparm_display_value: "true",
+        });
+        return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
       } catch (error) {
         return errorResult(error);
       }

@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServiceNowClient } from "../../client.js";
 import type { Mode } from "../../types.js";
 import { errorResult, jsonResult, textResult } from "../../utils.js";
+import { EXECUTE } from "../../annotations.js";
 
 export function registerExecuteTools(
   server: McpServer,
@@ -26,6 +27,7 @@ export function registerExecuteTools(
         .optional()
         .describe("Application scope to run the script in (default 'global')"),
     },
+    EXECUTE,
     async ({ script, scope }) => {
       try {
         const result = await client.executeBackgroundScript(script, scope ?? "global");
@@ -67,6 +69,7 @@ export function registerExecuteTools(
       order_dir: z.enum(["asc", "desc"]).optional().describe("Order direction (default 'asc')"),
       display_value: z.boolean().optional().describe("Return display values instead of internal values (default true)"),
     },
+    EXECUTE,
     async ({ table, query, fields, limit, order_by, order_dir, display_value }) => {
       try {
         const maxRows = limit ?? 20;

@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServiceNowClient } from "../../client.js";
 import type { Mode } from "../../types.js";
 import { errorResult, jsonResult, textResult } from "../../utils.js";
+import { CREATE, READ, UPDATE } from "../../annotations.js";
 
 export function registerUpdateSetTools(
   server: McpServer,
@@ -20,6 +21,7 @@ export function registerUpdateSetTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ state, application, name, query, limit, offset }) => {
       try {
         const queryParts: string[] = [];
@@ -54,6 +56,7 @@ export function registerUpdateSetTools(
     {
       sys_id: z.string().describe("The sys_id of the update set"),
     },
+    READ,
     async ({ sys_id }) => {
       try {
         const record = await client.getById("sys_update_set", sys_id);
@@ -74,6 +77,7 @@ export function registerUpdateSetTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 50)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ update_set_sys_id, type, target_name, limit, offset }) => {
       try {
         const queryParts: string[] = [];
@@ -112,6 +116,7 @@ export function registerUpdateSetTools(
       description: z.string().optional().describe("Description of the update set"),
       parent: z.string().optional().describe("sys_id of parent update set (for batching)"),
     },
+    CREATE,
     async ({ name, description, parent }) => {
       try {
         const data: Record<string, unknown> = { name, state: "in progress" };
@@ -132,6 +137,7 @@ export function registerUpdateSetTools(
       sys_id: z.string().describe("The sys_id of the update set to update"),
       data: z.record(z.string(), z.unknown()).describe("Field-value pairs to update (e.g. state, name, description)"),
     },
+    UPDATE,
     async ({ sys_id, data }) => {
       try {
         const record = await client.update("sys_update_set", sys_id, data);

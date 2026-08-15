@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServiceNowClient } from "../../client.js";
 import type { Mode } from "../../types.js";
 import { errorResult, jsonResult } from "../../utils.js";
+import { READ } from "../../annotations.js";
 
 export function registerScopeTools(
   server: McpServer,
@@ -19,6 +20,7 @@ export function registerScopeTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ name, scope, active, limit, offset }) => {
       try {
         const qp: string[] = [];
@@ -52,6 +54,7 @@ export function registerScopeTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ source_scope, target_scope, status, operation, limit, offset }) => {
       try {
         const qp: string[] = [];
@@ -82,6 +85,7 @@ export function registerScopeTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 50)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ limit, offset }) => {
       try {
         const result = await client.query("sys_scope_privilege", {
@@ -107,6 +111,7 @@ export function registerScopeTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ target_scope, status, limit, offset }) => {
       try {
         const qp: string[] = [];

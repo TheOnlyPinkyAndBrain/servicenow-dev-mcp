@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServiceNowClient } from "../../client.js";
 import type { Mode } from "../../types.js";
 import { errorResult, jsonResult } from "../../utils.js";
+import { READ } from "../../annotations.js";
 
 export function registerDataPolicyTools(
   server: McpServer,
@@ -22,6 +23,7 @@ export function registerDataPolicyTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ table, active, apply_soap, apply_import_set, enforce_ui, short_description, limit, offset }) => {
       try {
         const queryParts: string[] = [];
@@ -58,6 +60,7 @@ export function registerDataPolicyTools(
     {
       sys_id: z.string().describe("The sys_id of the data policy"),
     },
+    READ,
     async ({ sys_id }) => {
       try {
         const [policy, rules] = await Promise.all([
@@ -86,6 +89,7 @@ export function registerDataPolicyTools(
     {
       data_policy_sys_id: z.string().describe("The sys_id of the parent data policy"),
     },
+    READ,
     async ({ data_policy_sys_id }) => {
       try {
         const result = await client.query("sys_data_policy_rule", {
@@ -112,6 +116,7 @@ export function registerDataPolicyTools(
       table: z.string().describe("Table name, e.g. 'incident'"),
       api_only: z.boolean().optional().describe("Only show policies that apply to web service API calls (default false)"),
     },
+    READ,
     async ({ table, api_only }) => {
       try {
         const queryParts = [`model_table=${table}`, "active=true"];

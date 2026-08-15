@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServiceNowClient } from "../../client.js";
 import type { Mode } from "../../types.js";
 import { errorResult, jsonResult } from "../../utils.js";
+import { READ, UPDATE } from "../../annotations.js";
 
 export function registerSystemTools(
   server: McpServer,
@@ -20,6 +21,7 @@ export function registerSystemTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ name, description, limit, offset }) => {
       try {
         const queryParts: string[] = [];
@@ -52,6 +54,7 @@ export function registerSystemTools(
     {
       name: z.string().describe("Exact property name, e.g. 'glide.ui.list.edit'"),
     },
+    READ,
     async ({ name }) => {
       try {
         const result = await client.query("sys_properties", {
@@ -83,6 +86,7 @@ export function registerSystemTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ name, state, trigger_type, limit, offset }) => {
       try {
         const queryParts: string[] = [];
@@ -116,6 +120,7 @@ export function registerSystemTools(
     {
       sys_id: z.string().describe("The sys_id of the scheduled job"),
     },
+    READ,
     async ({ sys_id }) => {
       try {
         const record = await client.getById("sys_trigger", sys_id);
@@ -138,6 +143,7 @@ export function registerSystemTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ name, scope, active, limit, offset }) => {
       try {
         const queryParts: string[] = [];
@@ -170,6 +176,7 @@ export function registerSystemTools(
     {
       sys_id: z.string().describe("The sys_id of the application scope"),
     },
+    READ,
     async ({ sys_id }) => {
       try {
         const record = await client.getById("sys_scope", sys_id);
@@ -189,6 +196,7 @@ export function registerSystemTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 50)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ application, title, limit, offset }) => {
       try {
         const queryParts: string[] = [];
@@ -230,6 +238,7 @@ export function registerSystemTools(
       min_fields: z.string().optional().describe("Comma-separated fields to get minimums"),
       max_fields: z.string().optional().describe("Comma-separated fields to get maximums"),
     },
+    READ,
     async ({ table, query, group_by, count, avg_fields, sum_fields, min_fields, max_fields }) => {
       try {
         const result = await client.aggregate(table, {
@@ -258,6 +267,7 @@ export function registerSystemTools(
       table: z.string().describe("Table name to analyze, e.g. 'incident'"),
       active_only: z.boolean().optional().describe("Only show active customizations (default true)"),
     },
+    READ,
     async ({ table, active_only }) => {
       try {
         const activeFilter = active_only !== false ? "^active=true" : "";
@@ -304,6 +314,133 @@ export function registerSystemTools(
     }
   );
 
+  server.tool(
+    "sn_schedule_list",
+    "List schedules (cmn_schedule) — reusable time definitions (business hours, maintenance windows, holidays) used by SLAs, on-call, and jobs.",
+    {
+      name: z.string().optional().describe("Filter by name (contains match)"),
+      type: z.string().optional().describe("Filter by schedule type"),
+      query: z.string().optional().describe("Additional encoded query"),
+      limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
+    },
+    READ,
+    async ({ name, type, query, limit, offset }) => {
+      try {
+        const queryParts: string[] = [];
+        if (name) queryParts.push(`nameLIKE${name}`);
+        if (type) queryParts.push(`type=${type}`);
+        if (query) queryParts.push(query);
+        queryParts.push("ORDERBYname");
+        const result = await client.query("cmn_schedule", {
+          sysparm_query: queryParts.join("^"),
+          sysparm_fields: "sys_id,name,label,type,time_zone,description,sys_updated_on",
+          sysparm_limit: limit,
+          sysparm_offset: offset,
+          sysparm_display_value: "true",
+        });
+        return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_report_list",
+    "List reports (sys_report) — saved reports with source table, type, and grouping. Useful for auditing reporting and finding a report's definition.",
+    {
+      title: z.string().optional().describe("Filter by title (contains match)"),
+      table: z.string().optional().describe("Filter by source table"),
+      type: z.string().optional().describe("Filter by report type (e.g. 'bar', 'pie', 'list', 'pivot')"),
+      query: z.string().optional().describe("Additional encoded query"),
+      limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
+    },
+    READ,
+    async ({ title, table, type, query, limit, offset }) => {
+      try {
+        const queryParts: string[] = [];
+        if (title) queryParts.push(`titleLIKE${title}`);
+        if (table) queryParts.push(`table=${table}`);
+        if (type) queryParts.push(`type=${type}`);
+        if (query) queryParts.push(query);
+        queryParts.push("ORDERBYtitle");
+        const result = await client.query("sys_report", {
+          sysparm_query: queryParts.join("^"),
+          sysparm_fields: "sys_id,title,name,table,type,field,aggregate,is_scheduled,active,user,sys_updated_on",
+          sysparm_limit: limit,
+          sysparm_offset: offset,
+          sysparm_display_value: "true",
+        });
+        return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_template_list",
+    "List record templates (sys_template) — reusable field-value presets applied to new records on a table.",
+    {
+      name: z.string().optional().describe("Filter by name (contains match)"),
+      table: z.string().optional().describe("Filter by table"),
+      active: z.boolean().optional().describe("Filter by active status"),
+      limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
+    },
+    READ,
+    async ({ name, table, active, limit, offset }) => {
+      try {
+        const queryParts: string[] = [];
+        if (name) queryParts.push(`nameLIKE${name}`);
+        if (table) queryParts.push(`table=${table}`);
+        if (active !== undefined) queryParts.push(`active=${active}`);
+        queryParts.push("ORDERBYname");
+        const result = await client.query("sys_template", {
+          sysparm_query: queryParts.join("^"),
+          sysparm_fields: "sys_id,name,table,short_description,active,user,template,sys_updated_on",
+          sysparm_limit: limit,
+          sysparm_offset: offset,
+          sysparm_display_value: "true",
+        });
+        return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_currency_list",
+    "List currencies (fx_currency) — the currency codes/symbols configured on the instance for currency fields.",
+    {
+      code: z.string().optional().describe("Filter by ISO currency code (e.g. 'USD')"),
+      active: z.boolean().optional().describe("Filter by active status"),
+      limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 50)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
+    },
+    READ,
+    async ({ code, active, limit, offset }) => {
+      try {
+        const queryParts: string[] = [];
+        if (code) queryParts.push(`code=${code}`);
+        if (active !== undefined) queryParts.push(`active=${active}`);
+        queryParts.push("ORDERBYcode");
+        const result = await client.query("fx_currency", {
+          sysparm_query: queryParts.join("^"),
+          sysparm_fields: "sys_id,code,name,symbol,numeric_code,active",
+          sysparm_limit: limit ?? 50,
+          sysparm_offset: offset,
+        });
+        return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
   // ========== Develop-only system tools ==========
   if (mode !== "develop") return;
 
@@ -316,6 +453,7 @@ export function registerSystemTools(
       description: z.string().optional().describe("Property description (only used when creating)"),
       type: z.enum(["string", "integer", "boolean", "choicelist"]).optional().describe("Property type (only used when creating)"),
     },
+    UPDATE,
     async ({ name, value, description, type }) => {
       try {
         // Check if property exists

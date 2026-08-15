@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServiceNowClient } from "../../client.js";
 import type { Mode } from "../../types.js";
 import { errorResult, jsonResult } from "../../utils.js";
+import { READ } from "../../annotations.js";
 
 export function registerDiagnosticsTools(
   server: McpServer,
@@ -15,6 +16,7 @@ export function registerDiagnosticsTools(
     {
       limit: z.coerce.number().min(1).max(50).optional().describe("Max records (default 20)"),
     },
+    READ,
     async ({ limit }) => {
       try {
         const result = await client.query("sys_cluster_state", {
@@ -40,6 +42,7 @@ export function registerDiagnosticsTools(
       created_before: z.string().optional().describe("Created before datetime"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
     },
+    READ,
     async ({ name, detail, created_after, created_before, limit }) => {
       try {
         const qp: string[] = [];
@@ -67,6 +70,7 @@ export function registerDiagnosticsTools(
     {
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
     },
+    READ,
     async ({ limit }) => {
       try {
         const result = await client.query("sys_cache_flush", {
@@ -90,6 +94,7 @@ export function registerDiagnosticsTools(
       created_after: z.string().optional().describe("Created after datetime"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
     },
+    READ,
     async ({ table, min_duration, created_after, limit }) => {
       try {
         const qp: string[] = [];
@@ -122,6 +127,7 @@ export function registerDiagnosticsTools(
       created_before: z.string().optional().describe("Created before datetime"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
     },
+    READ,
     async ({ document_key, tablename, fieldname, user, created_after, created_before, limit }) => {
       try {
         const qp: string[] = [];
@@ -154,6 +160,7 @@ export function registerDiagnosticsTools(
       created_after: z.string().optional().describe("Deleted after datetime"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
     },
+    READ,
     async ({ tablename, user, created_after, limit }) => {
       try {
         const qp: string[] = [];
@@ -183,6 +190,7 @@ export function registerDiagnosticsTools(
       check: z.string().optional().describe("Scan check name (contains match)"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
     },
+    READ,
     async ({ severity, category, check, limit }) => {
       try {
         const qp: string[] = [];

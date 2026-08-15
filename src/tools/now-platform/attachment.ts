@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServiceNowClient } from "../../client.js";
 import type { Mode } from "../../types.js";
 import { errorResult, jsonResult } from "../../utils.js";
+import { DELETE, READ } from "../../annotations.js";
 
 export function registerAttachmentTools(
   server: McpServer,
@@ -18,6 +19,7 @@ export function registerAttachmentTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ table_name, table_sys_id, limit, offset }) => {
       try {
         const result = await client.attachmentQuery(table_name, table_sys_id, {
@@ -37,6 +39,7 @@ export function registerAttachmentTools(
     {
       sys_id: z.string().describe("Attachment sys_id"),
     },
+    READ,
     async ({ sys_id }) => {
       try {
         const result = await client.attachmentGetById(sys_id);
@@ -59,6 +62,7 @@ export function registerAttachmentTools(
       created_after: z.string().optional().describe("Created after datetime"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
     },
+    READ,
     async ({ file_name, content_type, table_name, min_size, max_size, created_after, limit }) => {
       try {
         const qp: string[] = [];
@@ -90,6 +94,7 @@ export function registerAttachmentTools(
     {
       sys_id: z.string().describe("Attachment sys_id to delete"),
     },
+    DELETE,
     async ({ sys_id }) => {
       try {
         await client.attachmentDelete(sys_id);

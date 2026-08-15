@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServiceNowClient } from "../../client.js";
 import type { Mode } from "../../types.js";
 import { errorResult, jsonResult } from "../../utils.js";
+import { READ } from "../../annotations.js";
 
 export function registerScheduledJobTools(
   server: McpServer,
@@ -19,6 +20,7 @@ export function registerScheduledJobTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ name, active, run_type, limit, offset }) => {
       try {
         const qp: string[] = [];
@@ -51,6 +53,7 @@ export function registerScheduledJobTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ state, name, claimed_by, limit, offset }) => {
       try {
         const qp: string[] = [];
@@ -81,6 +84,7 @@ export function registerScheduledJobTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ min_minutes, limit, offset }) => {
       try {
         const cutoff = new Date(Date.now() - (min_minutes ?? 30) * 60000).toISOString().replace("T", " ").slice(0, 19);
@@ -119,6 +123,7 @@ export function registerScheduledJobTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 10)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ job_name, limit, offset }) => {
       try {
         const result = await client.query("sys_trigger", {

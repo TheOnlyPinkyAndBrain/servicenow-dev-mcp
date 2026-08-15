@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServiceNowClient } from "../../client.js";
 import type { Mode } from "../../types.js";
 import { errorResult, jsonResult } from "../../utils.js";
+import { EXECUTE } from "../../annotations.js";
 
 export function registerBatchTools(
   server: McpServer,
@@ -20,6 +21,7 @@ export function registerBatchTools(
         body: z.record(z.string(), z.unknown()).optional().describe("Request body for POST/PUT/PATCH"),
       })).describe("Array of REST API requests to execute in batch"),
     },
+    EXECUTE,
     async ({ requests }) => {
       try {
         const result = await client.batchRequest(requests);

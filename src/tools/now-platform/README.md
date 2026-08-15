@@ -2,7 +2,7 @@
 
 Table/Aggregate/Attachment/Batch APIs, schema, scripting, admin, and diagnostics.
 
-**Module folder:** `src/tools/now-platform/` · **Files:** 16 · **Tools:** 71
+**Module folder:** `src/tools/now-platform/` · **Files:** 16 · **Tools:** 78
 
 Read-only tools (`both`) work in `debug` and `develop` modes; `develop` tools require `SERVICENOW_MODE=develop`.
 
@@ -12,11 +12,13 @@ Read-only tools (`both`) work in `debug` and `develop` modes; `develop` tools re
 | `sn_app_get` | both | Get full application scope details by sys_id |
 | `sn_app_list` | both | List application scopes (sys_scope). Shows custom and store apps installed on the instance. |
 | `sn_app_modules` | both | List application modules (navigation menu items) for an application or scope. Useful for understanding app navigation structure. |
+| `sn_archive_rule_list` | both | List table archive rules (sys_archive) — rules that move aged records off active tables, with their condition, schedule, and estimated volume. |
 | `sn_attachment_delete` | develop | Delete an attachment by sys_id |
 | `sn_attachment_get` | both | Get attachment metadata by sys_id (file name, content type, size, table info) |
 | `sn_attachment_list` | both | List attachments for a specific record or table. Returns metadata including file name, size, content type. |
 | `sn_attachment_search` | both | Search attachments by file name, content type, or size across all tables |
 | `sn_batch_request` | both | Execute multiple REST API calls in a single batch request (/api/now/v1/batch). Reduces round trips and improves performance by up to 66%. All requests must be independent (no data dependencies between them). |
+| `sn_currency_list` | both | List currencies (fx_currency) — the currency codes/symbols configured on the instance for currency fields. |
 | `sn_data_policy_for_table` | both | Find all active data policies and their rules for a specific table. Essential for debugging 'mandatory field' or 'read-only' errors when creating/updating records via API, import sets, or the UI. Returns policies with their conditions and field rules in one call. |
 | `sn_data_policy_get` | both | Get a data policy by sys_id with all its field rules. Shows the policy conditions, which fields are mandatory or read-only, and where it applies (API, import sets, UI). |
 | `sn_data_policy_list` | both | List data policies (sys_data_policy2). Data policies enforce mandatory and read-only rules server-side — they apply even via API and import sets, unlike UI policies. A common source of 'mandatory field' errors when creating/updating records via web services. |
@@ -37,13 +39,17 @@ Read-only tools (`both`) work in `debug` and `develop` modes; `develop` tools re
 | `sn_email_get` | both | Get full email details including body, headers, and delivery info |
 | `sn_email_list` | both | List email records (sys_email) — outbound and inbound emails. Filter by state, type, recipients, subject. |
 | `sn_email_log` | both | Query email logs (sys_email) to debug email delivery. Shows recipient, subject, type, state, and errors. |
+| `sn_email_template_list` | both | List email templates (sysevent_email_template) — reusable subject/body templates referenced by notifications. |
 | `sn_email_trace` | both | Trace an email notification from event to delivery. Queries sysevent, notification, sys_email, and sys_email_log. |
 | `sn_event_log` | both | Query the event log (sysevent) to trace event processing. Shows what events fired, their state, and processing details. |
+| `sn_event_registry_list` | both | List registered system events (sysevent_register) — the event names a table can fire (used by notifications, flows, and business rules). |
 | `sn_logs_get_transactions` | both | Query transaction logs — filter by URL, status, and time range |
 | `sn_logs_query` | both | Query system logs (syslog) — filter by level, source, message text, and time range |
 | `sn_notification_config_list` | both | List email notification configurations (sysevent_email_action) — what notifications exist and their conditions |
 | `sn_notification_get` | both | Get full email notification details including message template, conditions, and recipients |
 | `sn_notification_list` | both | List email notifications (sysevent_email_action). Shows notification name, table, event, conditions. Critical for debugging why emails are or aren't being sent. |
+| `sn_report_list` | both | List reports (sys_report) — saved reports with source table, type, and grouping. Useful for auditing reporting and finding a report's definition. |
+| `sn_schedule_list` | both | List schedules (cmn_schedule) — reusable time definitions (business hours, maintenance windows, holidays) used by SLAs, on-call, and jobs. |
 | `sn_scheduled_job_history` | both | Get recent execution history for a scheduled job by checking sys_trigger runs |
 | `sn_scheduled_job_list` | both | List scheduled job definitions (sysauto_script) — recurring and one-time scheduled scripts |
 | `sn_scheduled_stuck_jobs` | both | Find stuck or orphaned scheduled jobs — triggers that are running or queued on nodes that may no longer exist |
@@ -70,6 +76,7 @@ Read-only tools (`both`) work in `debug` and `develop` modes; `develop` tools re
 | `sn_table_impact` | both | Analyze what customizations affect a table — lists all business rules, client scripts, UI policies, UI actions, ACLs, and script includes related to a specific table. Essential for debugging why a form/table behaves a certain way. |
 | `sn_table_query` | both | Query records from any ServiceNow table with filters, pagination, and field selection |
 | `sn_table_update` | develop | Update a record in any ServiceNow table by sys_id |
+| `sn_template_list` | both | List record templates (sys_template) — reusable field-value presets applied to new records on a table. |
 | `sn_update_set_changes` | both | List all customer updates (changes) in an update set. Shows what records were modified, their type, target table, and action. Essential for reviewing what an update set contains before promoting. |
 | `sn_update_set_create` | develop | Create a new update set |
 | `sn_update_set_get` | both | Get full update set details including description and state |

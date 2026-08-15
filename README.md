@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A comprehensive MCP (Model Context Protocol) server that gives AI assistants expert-level access to any ServiceNow module. **335 tools across 52 modules.** Connects to a ServiceNow instance via Basic Auth and provides tools for debugging, inspecting configuration, and building features across the entire platform.
+A comprehensive MCP (Model Context Protocol) server that gives AI assistants expert-level access to any ServiceNow module. **342 tools across 52 modules.** Connects to a ServiceNow instance via Basic Auth and provides tools for debugging, inspecting configuration, and building features across the entire platform.
 
 ## Coverage model
 
@@ -20,7 +20,7 @@ Tools are organized into folders named after ServiceNow product modules (matchin
 | ServiceNow module | Folder | Tools | Details |
 |-------------------|--------|------:|---------|
 | IT Service Management (ITSM) | `it-service-management` | 56 | [README](src/tools/it-service-management/README.md) |
-| Now Platform (core) | `now-platform` | 71 | [README](src/tools/now-platform/README.md) |
+| Now Platform (core) | `now-platform` | 78 | [README](src/tools/now-platform/README.md) |
 | Source-to-Pay Operations | `source-to-pay-operations` | 58 | [README](src/tools/source-to-pay-operations/README.md) |
 | ServiceNow Platform (CMDB, Knowledge, Interaction, Skills) | `servicenow-platform` | 26 | [README](src/tools/servicenow-platform/README.md) |
 | Application Development | `application-development` | 24 | [README](src/tools/application-development/README.md) |
@@ -35,7 +35,7 @@ Tools are organized into folders named after ServiceNow product modules (matchin
 | Governance, Risk & Compliance (GRC) | `governance-risk-compliance` | 6 | [README](src/tools/governance-risk-compliance/README.md) |
 | Platform Analytics | `now-intelligence` | 4 | [README](src/tools/now-intelligence/README.md) |
 
-_52 tool modules · 335 tools across 15 ServiceNow module folders._
+_52 tool modules · 342 tools across 15 ServiceNow module folders._
 
 ## Capabilities
 

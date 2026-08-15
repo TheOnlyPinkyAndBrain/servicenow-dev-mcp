@@ -9,7 +9,7 @@ const client = new ServiceNowClient(config);
 
 const server = new McpServer({
   name: "servicenow-mcp",
-  version: "3.5.0",
+  version: "3.6.0",
 });
 
 for (const register of registrars) {
@@ -17,7 +17,7 @@ for (const register of registrars) {
 }
 
 console.error(
-  `ServiceNow MCP Server v3.5.0 started (mode: ${config.mode})`
+  `ServiceNow MCP Server v3.6.0 started (mode: ${config.mode})`
 );
 console.error(`Instance: ${config.instanceUrl}`);
 

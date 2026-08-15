@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServiceNowClient } from "../../client.js";
 import { ServiceNowApiError } from "../../client.js";
 import type { Mode } from "../../types.js";
+import { READ } from "../../annotations.js";
 
 function errorResult(error: unknown) {
   const message =
@@ -40,6 +41,7 @@ export function registerLogTools(
         .describe("End of time range, e.g. '2024-01-02 00:00:00'"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
     },
+    READ,
     async ({ level, source, message, start_time, end_time, limit }) => {
       try {
         const queryParts: string[] = [];
@@ -104,6 +106,7 @@ export function registerLogTools(
         .describe("End of time range, e.g. '2024-01-02 00:00:00'"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
     },
+    READ,
     async ({ url, status, start_time, end_time, limit }) => {
       try {
         const queryParts: string[] = [];

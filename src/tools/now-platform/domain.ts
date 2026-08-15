@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServiceNowClient } from "../../client.js";
 import type { Mode } from "../../types.js";
 import { errorResult, jsonResult } from "../../utils.js";
+import { READ } from "../../annotations.js";
 
 export function registerDomainTools(
   server: McpServer,
@@ -18,6 +19,7 @@ export function registerDomainTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 50)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ parent, active, limit, offset }) => {
       try {
         const qp: string[] = [];
@@ -47,6 +49,7 @@ export function registerDomainTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ user, limit, offset }) => {
       try {
         const isId = /^[a-f0-9]{32}$/.test(user);
@@ -74,6 +77,7 @@ export function registerDomainTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ group, limit, offset }) => {
       try {
         const isId = /^[a-f0-9]{32}$/.test(group);
@@ -102,6 +106,7 @@ export function registerDomainTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ domain, overrides_table, limit, offset }) => {
       try {
         const qp: string[] = [];

@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServiceNowClient } from "../../client.js";
 import type { Mode } from "../../types.js";
 import { errorResult, jsonResult } from "../../utils.js";
+import { READ } from "../../annotations.js";
 
 export function registerSchemaTools(
   server: McpServer,
@@ -20,6 +21,7 @@ export function registerSchemaTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ name, label, super_class, scope, limit, offset }) => {
       try {
         const queryParts: string[] = [];
@@ -58,6 +60,7 @@ export function registerSchemaTools(
       include_inherited: z.boolean().optional().describe("Include fields inherited from parent tables (default true)"),
       limit: z.coerce.number().min(1).max(200).optional().describe("Max records (default 100)"),
     },
+    READ,
     async ({ table, column_name, type, include_inherited, limit }) => {
       try {
         const queryParts: string[] = [];
@@ -99,6 +102,7 @@ export function registerSchemaTools(
       field: z.string().describe("Field name, e.g. 'state', 'priority', 'category'"),
       inactive: z.boolean().optional().describe("Include inactive choices (default false)"),
     },
+    READ,
     async ({ table, field, inactive }) => {
       try {
         const queryParts: string[] = [];
@@ -131,6 +135,7 @@ export function registerSchemaTools(
     {
       table: z.string().describe("Table name to inspect, e.g. 'incident'"),
     },
+    READ,
     async ({ table }) => {
       try {
         // Get the table record itself
@@ -190,6 +195,7 @@ export function registerSchemaTools(
       table: z.string().describe("Table name, e.g. 'incident'"),
       direction: z.enum(["outbound", "inbound", "both"]).optional().describe("Direction of references (default 'both'). 'outbound' = fields on this table referencing others. 'inbound' = fields on other tables referencing this table."),
     },
+    READ,
     async ({ table, direction }) => {
       try {
         const dir = direction ?? "both";

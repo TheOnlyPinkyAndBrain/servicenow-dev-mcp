@@ -47,3 +47,12 @@ export const ACTION: ToolAnnotations = {
   idempotentHint: true,
   openWorldHint: true,
 };
+
+// Runs arbitrary server-side script / batch of requests — can modify anything
+// and is not idempotent (e.g. background script execution, batch REST).
+export const EXECUTE: ToolAnnotations = {
+  readOnlyHint: false,
+  destructiveHint: true,
+  idempotentHint: false,
+  openWorldHint: true,
+};

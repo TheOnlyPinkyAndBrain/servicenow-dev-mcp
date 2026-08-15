@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServiceNowClient } from "../../client.js";
 import type { Mode } from "../../types.js";
 import { errorResult, jsonResult } from "../../utils.js";
+import { READ } from "../../annotations.js";
 
 export function registerUpgradeTools(
   server: McpServer,
@@ -16,6 +17,7 @@ export function registerUpgradeTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ limit, offset }) => {
       try {
         const result = await client.query("sys_upgrade_history", {
@@ -41,6 +43,7 @@ export function registerUpgradeTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 50)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ upgrade_history, type, limit, offset }) => {
       try {
         const qp: string[] = [];
@@ -73,6 +76,7 @@ export function registerUpgradeTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ type, name, category, updated_after, limit, offset }) => {
       try {
         const qp: string[] = [];
@@ -102,6 +106,7 @@ export function registerUpgradeTools(
     {
       upgrade_history: z.string().describe("Upgrade history sys_id"),
     },
+    READ,
     async ({ upgrade_history }) => {
       try {
         const summary = await client.aggregate("sys_upgrade_history_log", {

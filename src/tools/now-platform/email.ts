@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServiceNowClient } from "../../client.js";
 import type { Mode } from "../../types.js";
 import { errorResult, jsonResult } from "../../utils.js";
+import { READ } from "../../annotations.js";
 
 export function registerEmailTools(
   server: McpServer,
@@ -23,6 +24,7 @@ export function registerEmailTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ type, state, recipients, subject, target_table, created_after, created_before, limit, offset }) => {
       try {
         const qp: string[] = [];
@@ -54,6 +56,7 @@ export function registerEmailTools(
     {
       sys_id: z.string().describe("Email sys_id"),
     },
+    READ,
     async ({ sys_id }) => {
       try {
         const email = await client.getById("sys_email", sys_id);
@@ -72,6 +75,7 @@ export function registerEmailTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ created_after, limit, offset }) => {
       try {
         const qp: string[] = ["stateINerror,send-ignored,skipped", "type=send"];
@@ -99,6 +103,7 @@ export function registerEmailTools(
       notification_name: z.string().optional().describe("Notification name to filter (contains match)"),
       limit: z.coerce.number().min(1).max(20).optional().describe("Max records per step (default 10)"),
     },
+    READ,
     async ({ record_sys_id, notification_name, limit }) => {
       try {
         const lim = limit ?? 10;
@@ -144,6 +149,7 @@ export function registerEmailTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ name, collection, active, limit, offset }) => {
       try {
         const qp: string[] = [];
@@ -175,6 +181,7 @@ export function registerEmailTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ active, limit, offset }) => {
       try {
         const qp: string[] = [];
@@ -184,6 +191,38 @@ export function registerEmailTools(
         const result = await client.query("sys_email_account", {
           sysparm_query: qp.join("^"),
           sysparm_fields: "sys_id,name,type,server,port,active,sys_updated_on",
+          sysparm_limit: limit,
+          sysparm_offset: offset,
+          sysparm_display_value: "true",
+        });
+        return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_email_template_list",
+    "List email templates (sysevent_email_template) — reusable subject/body templates referenced by notifications.",
+    {
+      name: z.string().optional().describe("Filter by name (contains match)"),
+      collection: z.string().optional().describe("Filter by the target table (collection)"),
+      query: z.string().optional().describe("Additional encoded query"),
+      limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
+    },
+    READ,
+    async ({ name, collection, query, limit, offset }) => {
+      try {
+        const queryParts: string[] = [];
+        if (name) queryParts.push(`nameLIKE${name}`);
+        if (collection) queryParts.push(`collection=${collection}`);
+        if (query) queryParts.push(query);
+        queryParts.push("ORDERBYname");
+        const result = await client.query("sysevent_email_template", {
+          sysparm_query: queryParts.join("^"),
+          sysparm_fields: "sys_id,name,subject,collection,email_layout,sys_updated_on",
           sysparm_limit: limit,
           sysparm_offset: offset,
           sysparm_display_value: "true",
