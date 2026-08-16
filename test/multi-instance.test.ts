@@ -17,25 +17,87 @@ function config(names: string[], defaultInstance = names[0]): ServiceNowConfig {
   return { instances, defaultInstance, mode: "debug", enableScriptExecute: false };
 }
 
-// A minimal stand-in for McpServer -- only the elicitInput surface
-// ServiceNowClient actually calls.
-function fakeMcpServer(elicitInput: (...args: unknown[]) => unknown) {
-  return { server: { elicitInput } } as unknown as import("@modelcontextprotocol/sdk/server/mcp.js").McpServer;
+// A minimal stand-in for McpServer -- only the elicitInput/sendLoggingMessage
+// surface ServiceNowClient actually calls.
+function fakeMcpServer(
+  elicitInput: (...args: unknown[]) => unknown,
+  sendLoggingMessage: (...args: unknown[]) => unknown = vi.fn().mockResolvedValue(undefined)
+) {
+  return {
+    server: { elicitInput },
+    sendLoggingMessage,
+  } as unknown as import("@modelcontextprotocol/sdk/server/mcp.js").McpServer;
 }
 
-describe("single-instance config (backward compatible)", () => {
-  it("never prompts and reports the sole instance as active", async () => {
-    const server = fakeMcpServer(() => {
-      throw new Error("elicitInput should not be called with a single instance");
-    });
-    const client = new ServiceNowClient(config(["default"]), server);
+describe("single-instance config (still prompts -- 'add another instance' is always on offer)", () => {
+  it("prompts even with one instance configured, and accepting it keeps it active", async () => {
+    const elicitInput = vi.fn().mockResolvedValue({ action: "accept", content: { instance: "default" } });
+    const client = new ServiceNowClient(config(["default"]), fakeMcpServer(elicitInput));
 
-    expect(client.getActiveInstanceName()).toBe("default");
     await client.resolveActiveInstance();
+    expect(elicitInput).toHaveBeenCalledTimes(1);
     expect(client.getActiveInstanceName()).toBe("default");
     expect(client.listInstances()).toEqual([
       { name: "default", instanceUrl: "https://default.service-now.com", authMethod: "basic", active: true },
     ]);
+
+    // Resolved once per process -- a later call must not prompt again.
+    await client.resolveActiveInstance();
+    expect(elicitInput).toHaveBeenCalledTimes(1);
+  });
+
+  it("falls back to the sole instance on decline or when elicitation isn't supported", async () => {
+    const declineClient = new ServiceNowClient(
+      config(["default"]),
+      fakeMcpServer(vi.fn().mockResolvedValue({ action: "decline" }))
+    );
+    await declineClient.resolveActiveInstance();
+    expect(declineClient.getActiveInstanceName()).toBe("default");
+
+    const unsupportedClient = new ServiceNowClient(
+      config(["default"]),
+      fakeMcpServer(vi.fn().mockRejectedValue(new Error("Client does not support elicitation")))
+    );
+    await unsupportedClient.resolveActiveInstance();
+    expect(unsupportedClient.getActiveInstanceName()).toBe("default");
+  });
+});
+
+describe("adding a new instance from the picker", () => {
+  it("keeps the current instance active and sends setup instructions instead of collecting credentials", async () => {
+    const elicitInput = vi.fn().mockResolvedValue({ action: "accept", content: { instance: "__add_new_instance__" } });
+    const sendLoggingMessage = vi.fn().mockResolvedValue(undefined);
+    const client = new ServiceNowClient(config(["dev", "prod"], "prod"), fakeMcpServer(elicitInput, sendLoggingMessage));
+
+    await client.resolveActiveInstance();
+
+    expect(client.getActiveInstanceName()).toBe("prod");
+    expect(sendLoggingMessage).toHaveBeenCalledTimes(1);
+    const [params] = sendLoggingMessage.mock.calls[0] as [{ level: string; data: string }];
+    expect(params.level).toBe("info");
+    expect(params.data).toMatch(/npm run setup/);
+    expect(params.data).toMatch(/"prod"/);
+  });
+
+  it("doesn't throw when the client doesn't support logging notifications", async () => {
+    const elicitInput = vi.fn().mockResolvedValue({ action: "accept", content: { instance: "__add_new_instance__" } });
+    const sendLoggingMessage = vi.fn().mockRejectedValue(new Error("logging not supported"));
+    const client = new ServiceNowClient(config(["dev", "prod"], "prod"), fakeMcpServer(elicitInput, sendLoggingMessage));
+
+    await expect(client.resolveActiveInstance()).resolves.toBeUndefined();
+    expect(client.getActiveInstanceName()).toBe("prod");
+  });
+
+  it("offers the add-new-instance option in the elicitation schema alongside every configured name", async () => {
+    const elicitInput = vi.fn().mockResolvedValue({ action: "decline" });
+    const client = new ServiceNowClient(config(["dev", "prod"], "prod"), fakeMcpServer(elicitInput));
+
+    await client.resolveActiveInstance();
+
+    const request = elicitInput.mock.calls[0][0] as {
+      requestedSchema: { properties: { instance: { enum: string[] } } };
+    };
+    expect(request.requestedSchema.properties.instance.enum).toEqual(["dev", "prod", "__add_new_instance__"]);
   });
 });
 

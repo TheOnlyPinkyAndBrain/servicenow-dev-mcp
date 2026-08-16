@@ -14,9 +14,12 @@ const server = new McpServer({
   version: SERVER_VERSION,
 });
 
-// The client needs `server` for the multi-instance elicitation prompt
-// (asked lazily on the first tool call, not here at startup — an MCP
-// server is spawned headlessly, with no request context yet to prompt on).
+// Needed for the "add a new instance" follow-up notification (see
+// ServiceNowClient.ensureActiveInstance) -- must be registered before
+// server.connect() below, per the SDK's registerCapabilities() contract.
+server.server.registerCapabilities({ logging: {} });
+
+// The client needs `server` for the instance-selection elicitation prompt.
 const client = new ServiceNowClient(config, server);
 
 for (const register of registrars) {
@@ -27,6 +30,16 @@ for (const register of registrars) {
 // sn_script_execute_query need config.enableScriptExecute, not just
 // config.mode, since they're gated by both.
 registerExecuteTools(server, client, config.mode, config.enableScriptExecute);
+
+// Fire the instance-selection prompt proactively once the client has
+// finished the initialize handshake, rather than waiting for the first
+// tool call -- oninitialized is the earliest point a server-initiated
+// request (elicitInput) is valid on the connection. Errors (client
+// doesn't support elicitation, etc.) are already swallowed inside
+// resolveActiveInstance(); .catch() here is just a backstop.
+server.server.oninitialized = () => {
+  client.resolveActiveInstance().catch(() => {});
+};
 
 const instanceNames = Object.keys(config.instances);
 const instanceSummary =

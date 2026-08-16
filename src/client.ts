@@ -7,6 +7,12 @@ import { createAuthProvider, type AuthProvider } from "./auth.js";
 // activate a role the account already has, never grant a new one.
 export const ELEVATION_FAILED_MARKER = "__ELEVATION_FAILED__";
 
+// Sentinel returned by the instance-selection elicitation when the human
+// picks "add a new instance" instead of one of the configured names. Starts
+// with "_" so it can never collide with a real instance name (config.ts
+// requires those to start with a letter).
+const ADD_NEW_INSTANCE = "__add_new_instance__";
+
 export class ServiceNowApiError extends Error {
   constructor(
     public statusCode: number,
@@ -35,9 +41,12 @@ export class ServiceNowClient {
 
   private readonly instances: Record<string, InstanceConfig>;
   private activeInstanceName: string;
-  // Multi-instance selection (elicitation prompt or silent single-instance
-  // default) only needs to happen once per process -- after that, whatever
-  // is active stays active until an explicit sn_instance_switch call.
+  // Instance selection (elicitation prompt, or silent default if the prompt
+  // is skipped/declined/unsupported) only needs to happen once per process
+  // -- after that, whatever is active stays active until an explicit
+  // sn_instance_switch call. Normally resolved by index.ts's oninitialized
+  // hook right after the client connects; resolveActiveInstance() below is
+  // the fallback for anything that reaches the API before that's run.
   private instanceResolved = false;
 
   constructor(
@@ -65,35 +74,42 @@ export class ServiceNowClient {
     this.activeInstanceName = name;
   }
 
-  // Runs at most once per process. With a single configured instance, this
-  // is a silent no-op (already applied at construction). With more than
-  // one, it asks the human which to use via the MCP client's elicitation UI
-  // -- on a client that doesn't support elicitation, or on decline/cancel,
-  // it silently keeps whatever SERVICENOW_DEFAULT_INSTANCE (or the first
-  // configured instance) already set at construction.
+  // Runs at most once per process, normally triggered by index.ts's
+  // oninitialized hook right after the client connects. Asks the human
+  // which configured instance to use -- or whether to add a new one --
+  // via the MCP client's elicitation UI. On a client that doesn't support
+  // elicitation, or on decline/cancel, it silently keeps whatever
+  // SERVICENOW_DEFAULT_INSTANCE (or the first/sole configured instance)
+  // already set at construction.
   private async ensureActiveInstance(): Promise<void> {
     if (this.instanceResolved) return;
     this.instanceResolved = true;
 
     const names = Object.keys(this.instances);
-    if (names.length <= 1) return;
+    const message =
+      names.length > 1
+        ? `Multiple ServiceNow instances are configured (${names.join(", ")}). ` +
+          `Which one should this session use? Defaulting to "${this.config.defaultInstance}" ` +
+          "if not answered. You can switch later with sn_instance_switch."
+        : `Configured ServiceNow instance: "${names[0]}" (${this.instances[names[0]].instanceUrl}). ` +
+          "Continue with it, or add another instance to the stack. You can switch later with sn_instance_switch.";
 
     try {
       const result = await this.server.server.elicitInput({
         mode: "form",
-        message:
-          `Multiple ServiceNow instances are configured (${names.join(", ")}). ` +
-          `Which one should this session use? Defaulting to "${this.config.defaultInstance}" ` +
-          "if not answered. You can switch later with sn_instance_switch.",
+        message,
         requestedSchema: {
           type: "object",
           properties: {
             instance: {
               type: "string",
               title: "ServiceNow instance",
-              description: "Pick which configured instance this session talks to.",
-              enum: names,
-              enumNames: names.map((n) => `${n} (${this.instances[n].instanceUrl})`),
+              description: "Pick which configured instance this session talks to, or add a new one to the stack.",
+              enum: [...names, ADD_NEW_INSTANCE],
+              enumNames: [
+                ...names.map((n) => `${n} (${this.instances[n].instanceUrl})`),
+                "+ Add a new instance...",
+              ],
               default: this.config.defaultInstance,
             },
           },
@@ -103,7 +119,9 @@ export class ServiceNowClient {
 
       if (result.action === "accept") {
         const chosen = result.content?.instance;
-        if (typeof chosen === "string" && this.instances[chosen]) {
+        if (chosen === ADD_NEW_INSTANCE) {
+          this.notifyAddInstanceInstructions();
+        } else if (typeof chosen === "string" && this.instances[chosen]) {
           this.applyInstance(this.instances[chosen], chosen);
         }
       }
@@ -114,9 +132,32 @@ export class ServiceNowClient {
     }
   }
 
-  // Exposed for tools (e.g. sn_script_execute) that need the active
-  // instance's URL for their own purposes (a confirmation prompt) before
-  // making a request themselves.
+  // "Add a new instance" can't be completed from inside the elicitation
+  // form itself: credentials need to go through `npm run setup`'s terminal
+  // wizard (never echoed to the screen or logged, encrypted at rest via
+  // dotenvx) rather than the MCP client's chat-facing form UI, and a
+  // running server can't hot-reload .env or its own SERVICENOW_INSTANCES
+  // list anyway -- only a fresh process picks up new config. So this just
+  // points at that wizard instead of collecting anything here.
+  private notifyAddInstanceInstructions(): void {
+    this.server
+      .sendLoggingMessage({
+        level: "info",
+        data:
+          'To add a new ServiceNow instance to the stack, run "npm run setup" in this ' +
+          'server\'s project directory (answer "y" to "Configure multiple instances?" if ' +
+          "asked), then reconnect this MCP server so it picks up the new config. This " +
+          `session keeps using "${this.activeInstanceName}" until then.`,
+      })
+      .catch(() => {
+        // Client doesn't support logging notifications -- nothing more we can do here.
+      });
+  }
+
+  // Exposed for index.ts's oninitialized hook (fires the startup prompt)
+  // and for tools (e.g. sn_script_execute) that need the active instance's
+  // URL for their own purposes (a confirmation prompt) before making a
+  // request themselves. instanceResolved makes repeat calls a no-op.
   async resolveActiveInstance(): Promise<void> {
     await this.ensureActiveInstance();
   }
