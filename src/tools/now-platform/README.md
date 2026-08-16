@@ -2,7 +2,7 @@
 
 Table/Aggregate/Attachment/Batch APIs, schema, scripting, admin, and diagnostics.
 
-**Module folder:** `src/tools/now-platform/` · **Files:** 16 · **Tools:** 78
+**Module folder:** `src/tools/now-platform/` · **Files:** 17 · **Tools:** 85
 
 Read-only tools (`both`) work in `debug` and `develop` modes; `develop` tools require `SERVICENOW_MODE=develop`.
 
@@ -10,8 +10,8 @@ Read-only tools (`both`) work in `debug` and `develop` modes; `develop` tools re
 |------|------|-------------|
 | `sn_aggregate` | both | Get aggregate statistics (count, sum, avg, min, max) for any table. Useful for dashboards, diagnostics, and understanding data distribution without pulling individual records. |
 | `sn_app_get` | both | Get full application scope details by sys_id |
-| `sn_app_list` | both | List application scopes (sys_scope). Shows custom and store apps installed on the instance. |
 | `sn_app_modules` | both | List application modules (navigation menu items) for an application or scope. Useful for understanding app navigation structure. |
+| `sn_app_scope_list` | both | List application scopes (sys_scope). Shows custom and store apps installed on the instance. |
 | `sn_archive_rule_list` | both | List table archive rules (sys_archive) — rules that move aged records off active tables, with their condition, schedule, and estimated volume. |
 | `sn_attachment_delete` | develop | Delete an attachment by sys_id |
 | `sn_attachment_get` | both | Get attachment metadata by sys_id (file name, content type, size, table info) |
@@ -42,6 +42,8 @@ Read-only tools (`both`) work in `debug` and `develop` modes; `develop` tools re
 | `sn_email_template_list` | both | List email templates (sysevent_email_template) — reusable subject/body templates referenced by notifications. |
 | `sn_email_trace` | both | Trace an email notification from event to delivery. Queries sysevent, notification, sys_email, and sys_email_log. |
 | `sn_event_log` | both | Query the event log (sysevent) to trace event processing. Shows what events fired, their state, and processing details. |
+| `sn_instance_list` | both | List every ServiceNow instance configured for this MCP server (via SERVICENOW_INSTANCES) and which one is currently active. Only useful when more than one instance is configured. |
+| `sn_instance_switch` | both | Switch which configured ServiceNow instance subsequent tool calls in this session target. Resets any cached background-script session since it's tied to the previous instance. |
 | `sn_event_registry_list` | both | List registered system events (sysevent_register) — the event names a table can fire (used by notifications, flows, and business rules). |
 | `sn_logs_get_transactions` | both | Query transaction logs — filter by URL, status, and time range |
 | `sn_logs_query` | both | Query system logs (syslog) — filter by level, source, message text, and time range |
@@ -54,7 +56,11 @@ Read-only tools (`both`) work in `debug` and `develop` modes; `develop` tools re
 | `sn_scheduled_job_list` | both | List scheduled job definitions (sysauto_script) — recurring and one-time scheduled scripts |
 | `sn_scheduled_stuck_jobs` | both | Find stuck or orphaned scheduled jobs — triggers that are running or queued on nodes that may no longer exist |
 | `sn_scheduled_trigger_list` | both | List scheduled execution triggers (sys_trigger) — the runtime state of scheduled items. Shows what's queued, running, or stuck. |
+| `sn_schema_choice_create` | develop | Add a new choice list value to a field (sys_choice) |
+| `sn_schema_choice_update` | develop | Update an existing choice list value (sys_choice) — e.g. relabel, reorder, activate/deactivate |
 | `sn_schema_choices` | both | Get choice list values for a field (sys_choice). Returns all available dropdown/choice values for a given table field. |
+| `sn_schema_column_create` | develop | Create a new column/field on a table (sys_dictionary). This is a dictionary change — adding a field to a table. |
+| `sn_schema_column_update` | develop | Update an existing column/field definition (sys_dictionary) — e.g. change mandatory, max_length, default_value, read_only, reference table |
 | `sn_schema_columns` | both | List all columns/fields for a ServiceNow table (sys_dictionary). Returns field name, label, type, max length, mandatory, reference table, default value, and more. Essential for understanding a table's data model. |
 | `sn_schema_references` | both | Find all reference fields pointing to or from a table. Helps understand relationships between tables. |
 | `sn_schema_table_hierarchy` | both | Get the full inheritance hierarchy for a table — shows parent chain up to the base table and all direct child tables. Critical for understanding ServiceNow's table-per-hierarchy model. |
@@ -81,6 +87,7 @@ Read-only tools (`both`) work in `debug` and `develop` modes; `develop` tools re
 | `sn_update_set_create` | develop | Create a new update set |
 | `sn_update_set_get` | both | Get full update set details including description and state |
 | `sn_update_set_list` | both | List update sets with state, application, and description. Core ServiceNow development workflow tool. |
+| `sn_update_set_set_current` | develop | Switch the active/current update set for the authenticated user. Table API writes are captured into whichever update set is 'current' for the user at the time of the write, independent of which update set you just created — call this before creating/updating script includes, business rules, flows, workflows, or dictionary entries so those changes land in the intended update set instead of whatever was previously active. |
 | `sn_update_set_update` | develop | Update an existing update set (change state, name, description) |
 | `sn_upgrade_customized_records` | both | List records customized from baseline (sys_update_xml where customer update is true) — shows what has been modified from out-of-box |
 | `sn_upgrade_history` | both | List upgrade/patch history (sys_upgrade_history) — all upgrades and patches applied to this instance |

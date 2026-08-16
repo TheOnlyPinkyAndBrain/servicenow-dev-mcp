@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-A comprehensive MCP (Model Context Protocol) server providing expert-level access to ServiceNow instances. v3.13.0 with 371 tools across 54 modules.
+A comprehensive MCP (Model Context Protocol) server providing expert-level access to ServiceNow instances. v3.13.0 with 373 tools across 54 modules.
 
 ## Coverage Model
 
@@ -16,7 +16,7 @@ The ServiceNow docs span ~49,000 topics, so the server does not ship a tool per 
 
 - **Entry point**: `src/index.ts` — creates MCP server, loads config, registers all tool modules
 - **Registry**: `src/tools/registry.ts` — single source of truth for the `registrars` array (every `registerXxxTools`). Both `index.ts` and the contract test import it, so a new module added here is automatically covered by tests. Add new modules to this array.
-- **Client**: `src/client.ts` — `ServiceNowClient` class wrapping ServiceNow Table API, Aggregate API, and generic REST
+- **Client**: `src/client.ts` — `ServiceNowClient` class wrapping ServiceNow Table API, Aggregate API, and generic REST. Also owns multi-instance state: holds every configured instance, and lazily resolves which one is "active" (via `ensureActiveInstance()`, called at the top of every public method) either by asking through MCP elicitation on the first call of a session, or falling back to `SERVICENOW_DEFAULT_INSTANCE` / the sole instance. `sn_instance_list`/`sn_instance_switch` (`src/tools/now-platform/instance.ts`) are the explicit, non-elicitation way to inspect/change this.
 - **Config**: `src/config.ts` — loads and validates env vars via Zod
 - **Types**: `src/types.ts` — shared TypeScript types (`Mode`, `ServiceNowConfig`, `QueryParams`, `PaginatedResult`)
 - **Utils**: `src/utils.ts` — shared helpers (`errorResult`, `jsonResult`, `textResult`, `buildQuery`)
@@ -73,8 +73,8 @@ npm test                        # run the vitest suite
 
 ## Environment Variables
 
-- `SERVICENOW_INSTANCE_URL` — instance URL (no trailing slash). Must be `https://` (config.ts rejects plaintext `http://` except `http://localhost[:port]`) — credentials go out as a Basic Auth header / bearer token on every request.
-- `SERVICENOW_MODE` — `debug` (read-only, default) or `develop` (read-write)
+- `SERVICENOW_INSTANCE_URL` — instance URL (no trailing slash). Must be `https://` (config.ts rejects plaintext `http://` except `http://localhost[:port]`) — credentials go out as a Basic Auth header / bearer token on every request. Single-instance mode; see "Multiple instances" below for holding more than one.
+- `SERVICENOW_MODE` — `debug` (read-only, default) or `develop` (read-write). Process-wide — applies no matter which instance is active.
 - `SERVICENOW_AUTH_METHOD` — `basic` (default), `bearer`, or `oauth`. Determines which of the credential vars below are required (enforced in `config.ts`):
   - `basic` — `SERVICENOW_USERNAME` / `SERVICENOW_PASSWORD`
   - `bearer` — `SERVICENOW_ACCESS_TOKEN`
@@ -82,6 +82,12 @@ npm test                        # run the vitest suite
   - `SERVICENOW_USERNAME` / `SERVICENOW_PASSWORD` are also the fallback login for the background-script tool's session, regardless of auth method
 - `SERVICENOW_ENABLE_SCRIPT_EXECUTE` — `true`/`false` (default `false`). Second, independent gate for `sn_script_execute`/`sn_script_execute_query`, required in addition to `SERVICENOW_MODE=develop`. See Script Execution below.
 - `SERVICENOW_ENV_FILE` — path to .env file (default: `.env`). Loaded via `@dotenvx/dotenvx`, which transparently decrypts values encrypted with `npx dotenvx encrypt` while still reading plain unencrypted values the same way `dotenv` always did — see `scripts/setup.mjs` and `.env.keys` (gitignored, holds the decryption key).
+
+## Multiple instances
+
+`SERVICENOW_INSTANCES=name1,name2,...` switches config.ts from single-instance mode (the bare vars above) to holding several: every var above except `SERVICENOW_MODE`/`SERVICENOW_ENABLE_SCRIPT_EXECUTE` (which stay process-wide) is repeated per instance as `SERVICENOW_INSTANCE_<NAME>_*` (name uppercased), e.g. `SERVICENOW_INSTANCE_DEV_URL`, `SERVICENOW_INSTANCE_PROD_AUTH_METHOD`. `SERVICENOW_DEFAULT_INSTANCE` picks which one is active before anything else has selected one (defaults to the first name in `SERVICENOW_INSTANCES`).
+
+At runtime, `ServiceNowClient` applies the default instance immediately at construction, then resolves the real selection lazily on the first call that actually talks to ServiceNow: with more than one instance configured, it asks via `server.server.elicitInput()` (same mechanism as the script-execute confirmation) which to use; on a client without elicitation support, or on decline/cancel/error, it silently keeps the default. This only happens once per process — see `ensureActiveInstance()`/`applyInstance()` in `client.ts`. `sn_instance_switch` re-applies a different instance explicitly (and marks selection as settled, so it won't re-prompt after that); `sn_instance_list` reports every configured instance and which is active.
 
 ## Script Execution
 

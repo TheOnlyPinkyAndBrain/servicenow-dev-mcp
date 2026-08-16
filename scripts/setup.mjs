@@ -4,6 +4,11 @@
 // such UI for a locally-spawned MCP server, so this is the practical
 // equivalent -- prompts for the fields the chosen auth method needs, and
 // writes them through `dotenvx set` so .env stays encrypted at rest.
+//
+// Supports both single-instance (the original SERVICENOW_INSTANCE_URL /
+// SERVICENOW_USERNAME / etc vars) and multi-instance (SERVICENOW_INSTANCES=
+// name1,name2 plus SERVICENOW_INSTANCE_<NAME>_* vars per instance) setups --
+// see the "Multiple instances" section of README.md for the env var layout.
 
 import { createInterface } from "node:readline";
 import { spawnSync } from "node:child_process";
@@ -75,14 +80,129 @@ function askSecret(question, hasExisting) {
   });
 }
 
-function setVar(key, value, { plain = false } = {}) {
-  if (!value) return; // blank = keep whatever's already in .env untouched
+function forceSetVar(key, value, { plain = false } = {}) {
   const args = ["set", key, value, "-f", ENV_FILE];
   if (plain) args.push("-p");
   const result = spawnSync(DOTENVX_BIN, args, { stdio: ["ignore", "ignore", "inherit"] });
   if (result.status !== 0) {
     throw new Error(`Failed to set ${key} (dotenvx exited ${result.status})`);
   }
+}
+
+function setVar(key, value, opts = {}) {
+  if (!value) return; // blank = keep whatever's already in .env untouched
+  forceSetVar(key, value, opts);
+}
+
+// Maps a bare suffix (URL, USERNAME, AUTH_METHOD, ...) to the actual env var
+// name for either single-instance (prefix null -- the original bare names)
+// or multi-instance (prefix = uppercased instance name) setups. Mirrors
+// src/config.ts's readInstanceEnv, which has to agree with this at runtime.
+function instanceVarName(prefix, suffix) {
+  if (!prefix) return suffix === "URL" ? "SERVICENOW_INSTANCE_URL" : `SERVICENOW_${suffix}`;
+  return `SERVICENOW_INSTANCE_${prefix}_${suffix}`;
+}
+
+// Runs the instance-URL + auth-method + credentials flow for one instance,
+// writing to either the bare vars (prefix === null) or the SERVICENOW_
+// INSTANCE_<prefix>_* vars. Shared between single- and multi-instance setup
+// so both stay in sync with whatever fields each auth method needs.
+async function configureInstance(prefix, label) {
+  const v = (suffix) => instanceVarName(prefix, suffix);
+  const existing = (suffix) => process.env[v(suffix)];
+
+  if (label) heading(label);
+
+  hint("Base URL of this ServiceNow instance, no trailing slash.");
+  hint("Example: https://dev12345.service-now.com");
+  const instanceUrl = await ask("Instance URL", existing("URL"));
+  setVar(v("URL"), instanceUrl, { plain: true });
+
+  hint("basic  = simplest. Just a ServiceNow username + password.");
+  hint("bearer = a token you already have from somewhere else -- ServiceNow has");
+  hint("         no long-lived personal-access-token concept, so this must be");
+  hint("         either a ServiceNow OAuth access token or (rarely) an");
+  hint("         externally-trusted OIDC token. Usually short-lived and NOT");
+  hint("         auto-refreshed -- if you don't already have one handed to");
+  hint("         you, pick oauth below instead.");
+  hint("oauth  = ServiceNow's own OAuth token endpoint. Needs an OAuth");
+  hint("         application already registered on the instance under");
+  hint("         System OAuth > Application Registry (client ID + secret).");
+  hint("         Fetches and refreshes tokens automatically -- the right");
+  hint("         choice if you don't already have a token in hand.");
+  const method = (await ask("Auth method (basic/bearer/oauth)", existing("AUTH_METHOD") || "basic")).toLowerCase();
+  if (!["basic", "bearer", "oauth"].includes(method)) {
+    console.error(`Unknown auth method "${method}" -- must be basic, bearer, or oauth.`);
+    process.exit(1);
+  }
+  setVar(v("AUTH_METHOD"), method, { plain: true });
+
+  heading(`Credentials (${method})`);
+
+  if (method === "basic") {
+    hint("The ServiceNow account this server acts as for every request.");
+    hint("Needs roles matching whatever modules you'll actually use -- see the");
+    hint("per-module role notes in README.md if a tool call fails with a 403.");
+    setVar(v("USERNAME"), await ask("Username", existing("USERNAME")), { plain: true });
+
+    hint("Never echoed to the screen or logged. Stored encrypted in .env.");
+    setVar(v("PASSWORD"), await askSecret("Password", !!existing("PASSWORD")));
+  } else if (method === "bearer") {
+    hint("Must be either a ServiceNow-issued OAuth access token (the same kind");
+    hint("the oauth method fetches automatically -- valid if you already");
+    hint("obtained one yourself some other way) or an externally-issued OIDC/JWT");
+    hint("token, which only works if your instance has Multi-Provider SSO /");
+    hint("External OAuth configured to trust that issuer for API calls --");
+    hint("check with your ServiceNow admin before assuming that's set up.");
+    hint("Typically short-lived (often ~30 min) and NOT refreshed by this");
+    hint("server -- once it expires, every request fails until you paste in a");
+    hint("fresh one via this wizard. Never echoed or logged.");
+    setVar(v("ACCESS_TOKEN"), await askSecret("Access token", !!existing("ACCESS_TOKEN")));
+  } else {
+    hint("From your ServiceNow instance: System OAuth > Application Registry.");
+    hint("Register an OAuth application there first if you haven't -- this");
+    hint("script can't create one on the instance for you.");
+    setVar(v("OAUTH_CLIENT_ID"), await ask("OAuth client ID", existing("OAUTH_CLIENT_ID")), { plain: true });
+
+    hint("Never echoed to the screen or logged. Stored encrypted in .env.");
+    setVar(v("OAUTH_CLIENT_SECRET"), await askSecret("OAuth client secret", !!existing("OAUTH_CLIENT_SECRET")));
+
+    hint("password           = token is tied to a specific user's roles (needs the");
+    hint("                      username/password below). Use this for most");
+    hint("                      dev/admin work -- it's what most ACL/role checks expect.");
+    hint("client_credentials = app-only token, no user context. Only works if your");
+    hint("                      OAuth application on the instance is configured to");
+    hint("                      allow this grant type.");
+    const grantType = (await ask("Grant type (password/client_credentials)", existing("OAUTH_GRANT_TYPE") || "password")).toLowerCase();
+    setVar(v("OAUTH_GRANT_TYPE"), grantType, { plain: true });
+
+    if (grantType === "password") {
+      hint("The ServiceNow user whose roles the issued token will carry.");
+      setVar(v("OAUTH_USERNAME"), await ask("OAuth username", existing("OAUTH_USERNAME")), { plain: true });
+
+      hint("Never echoed to the screen or logged. Stored encrypted in .env.");
+      setVar(v("OAUTH_PASSWORD"), await askSecret("OAuth password", !!existing("OAUTH_PASSWORD")));
+    }
+  }
+
+  // The background-script tool (sn_script_execute, sn_acl_create/update) logs
+  // in via ServiceNow's UI form regardless of auth method, so it always needs
+  // its own real username/password -- ask separately unless basic already covered it.
+  if (method !== "basic") {
+    heading("Background-script access (optional)");
+    hint("sn_script_execute and the ACL write tools (sn_acl_create/update) log in");
+    hint("through ServiceNow's own UI form (sys.scripts.do), not a REST endpoint --");
+    hint("there's no OAuth or bearer-token equivalent for that specific login, so");
+    hint("they always need a real username/password regardless of your auth method");
+    hint("above. Skip this if you won't use those tools on this instance.");
+    const wantBg = await ask("Set/update username/password for that? (y/n)", "y");
+    if (wantBg.toLowerCase().startsWith("y")) {
+      setVar(v("USERNAME"), await ask("Username", existing("USERNAME")), { plain: true });
+      setVar(v("PASSWORD"), await askSecret("Password", !!existing("PASSWORD")));
+    }
+  }
+
+  return instanceUrl || existing("URL");
 }
 
 async function main() {
@@ -98,105 +218,81 @@ async function main() {
   console.log("At the end, this script stops any currently-running server so it can't keep");
   console.log("using the old settings, and prints exactly what to do next to reconnect.");
 
-  heading("Instance & mode");
-
-  hint("Base URL of your ServiceNow instance, no trailing slash.");
-  hint("Example: https://dev12345.service-now.com");
-  const instanceUrl = await ask("Instance URL", process.env.SERVICENOW_INSTANCE_URL);
-  setVar("SERVICENOW_INSTANCE_URL", instanceUrl, { plain: true });
-
-  hint("debug   = read-only (88 tools). Safe default -- nothing can be created,");
-  hint("          changed, or deleted on your instance.");
-  hint("develop = adds create/update/delete tools (116 tools). Only switch once");
-  hint("          you trust this setup and actually need write access.");
+  heading("Mode");
+  hint("debug   = read-only. Safe default -- nothing can be created, changed, or");
+  hint("          deleted on your instance.");
+  hint("develop = adds create/update/delete tools. Only switch once you trust");
+  hint("          this setup and actually need write access.");
   const mode = await ask("Mode (debug/develop)", process.env.SERVICENOW_MODE || "debug");
   setVar("SERVICENOW_MODE", mode, { plain: true });
 
-  heading("Authentication method");
+  heading("How many ServiceNow instances?");
+  hint("Most setups talk to exactly one instance. If you regularly work across");
+  hint("more than one (e.g. dev + prod), this server can hold all of them and");
+  hint("either prompt which to use at the start of a session, or you can switch");
+  hint("with the sn_instance_switch tool mid-conversation.");
+  const existingInstances = (process.env.SERVICENOW_INSTANCES || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const multi = (
+    await ask(
+      "Configure multiple instances? (y/n)",
+      existingInstances.length > 1 ? "y" : "n"
+    )
+  ).toLowerCase().startsWith("y");
 
-  hint("basic  = simplest. Just a ServiceNow username + password.");
-  hint("bearer = a token you already have from somewhere else -- ServiceNow has");
-  hint("         no long-lived personal-access-token concept, so this must be");
-  hint("         either a ServiceNow OAuth access token or (rarely) an");
-  hint("         externally-trusted OIDC token. Usually short-lived and NOT");
-  hint("         auto-refreshed -- if you don't already have one handed to");
-  hint("         you, pick oauth below instead.");
-  hint("oauth  = ServiceNow's own OAuth token endpoint. Needs an OAuth");
-  hint("         application already registered on the instance under");
-  hint("         System OAuth > Application Registry (client ID + secret).");
-  hint("         Fetches and refreshes tokens automatically -- the right");
-  hint("         choice if you don't already have a token in hand.");
-  const method = (await ask("Auth method (basic/bearer/oauth)", process.env.SERVICENOW_AUTH_METHOD || "basic")).toLowerCase();
-  if (!["basic", "bearer", "oauth"].includes(method)) {
-    console.error(`Unknown auth method "${method}" -- must be basic, bearer, or oauth.`);
-    process.exit(1);
-  }
-  setVar("SERVICENOW_AUTH_METHOD", method, { plain: true });
-
-  heading(`Credentials (${method})`);
-
-  if (method === "basic") {
-    hint("The ServiceNow account this server acts as for every request.");
-    hint("Needs roles matching whatever modules you'll actually use -- see the");
-    hint("per-module role notes in README.md if a tool call fails with a 403.");
-    setVar("SERVICENOW_USERNAME", await ask("Username", process.env.SERVICENOW_USERNAME), { plain: true });
-
-    hint("Never echoed to the screen or logged. Stored encrypted in .env.");
-    setVar("SERVICENOW_PASSWORD", await askSecret("Password", !!process.env.SERVICENOW_PASSWORD));
-  } else if (method === "bearer") {
-    hint("Must be either a ServiceNow-issued OAuth access token (the same kind");
-    hint("the oauth method fetches automatically -- valid if you already");
-    hint("obtained one yourself some other way) or an externally-issued OIDC/JWT");
-    hint("token, which only works if your instance has Multi-Provider SSO /");
-    hint("External OAuth configured to trust that issuer for API calls --");
-    hint("check with your ServiceNow admin before assuming that's set up.");
-    hint("Typically short-lived (often ~30 min) and NOT refreshed by this");
-    hint("server -- once it expires, every request fails until you paste in a");
-    hint("fresh one via this wizard. Never echoed or logged.");
-    setVar("SERVICENOW_ACCESS_TOKEN", await askSecret("Access token", !!process.env.SERVICENOW_ACCESS_TOKEN));
+  if (!multi) {
+    await configureInstance(null, "Instance & credentials");
+    // Clear any stale multi-instance vars from a previous run so config.ts
+    // doesn't think this is still a multi-instance setup. setVar() no-ops on
+    // an empty value (that's what lets other prompts mean "keep current"),
+    // so this needs the unconditional variant.
+    if (process.env.SERVICENOW_INSTANCES) {
+      forceSetVar("SERVICENOW_INSTANCES", "", { plain: true });
+    }
   } else {
-    hint("From your ServiceNow instance: System OAuth > Application Registry.");
-    hint("Register an OAuth application there first if you haven't -- this");
-    hint("script can't create one on the instance for you.");
-    setVar("SERVICENOW_OAUTH_CLIENT_ID", await ask("OAuth client ID", process.env.SERVICENOW_OAUTH_CLIENT_ID), { plain: true });
-
-    hint("Never echoed to the screen or logged. Stored encrypted in .env.");
-    setVar("SERVICENOW_OAUTH_CLIENT_SECRET", await askSecret("OAuth client secret", !!process.env.SERVICENOW_OAUTH_CLIENT_SECRET));
-
-    hint("password           = token is tied to a specific user's roles (needs the");
-    hint("                      username/password below). Use this for most");
-    hint("                      dev/admin work -- it's what most ACL/role checks expect.");
-    hint("client_credentials = app-only token, no user context. Only works if your");
-    hint("                      OAuth application on the instance is configured to");
-    hint("                      allow this grant type.");
-    const grantType = (await ask("Grant type (password/client_credentials)", process.env.SERVICENOW_OAUTH_GRANT_TYPE || "password")).toLowerCase();
-    setVar("SERVICENOW_OAUTH_GRANT_TYPE", grantType, { plain: true });
-
-    if (grantType === "password") {
-      hint("The ServiceNow user whose roles the issued token will carry.");
-      setVar("SERVICENOW_OAUTH_USERNAME", await ask("OAuth username", process.env.SERVICENOW_OAUTH_USERNAME), { plain: true });
-
-      hint("Never echoed to the screen or logged. Stored encrypted in .env.");
-      setVar("SERVICENOW_OAUTH_PASSWORD", await askSecret("OAuth password", !!process.env.SERVICENOW_OAUTH_PASSWORD));
+    const names = [];
+    heading("Instance names");
+    hint("Short identifiers used to select an instance later (sn_instance_switch,");
+    hint("SERVICENOW_DEFAULT_INSTANCE) -- letters, digits, underscore only, e.g. 'dev', 'prod'.");
+    let more = true;
+    while (more) {
+      const name = await ask(names.length === 0 ? "First instance name" : "Next instance name (blank to stop)", "");
+      if (!name) {
+        if (names.length === 0) {
+          console.error("At least one instance name is required.");
+          continue;
+        }
+        more = false;
+        break;
+      }
+      if (!/^[A-Za-z][A-Za-z0-9_]*$/.test(name)) {
+        console.error("Instance name must start with a letter and contain only letters, digits, underscores.");
+        continue;
+      }
+      names.push(name);
+      await configureInstance(name.toUpperCase(), `Instance "${name}"`);
     }
+
+    setVar("SERVICENOW_INSTANCES", names.join(","), { plain: true });
+
+    heading("Default instance");
+    hint("Used when a session starts on an MCP client that can't prompt (no");
+    hint("elicitation support), or whenever sn_instance_switch hasn't been called yet.");
+    const defaultInstance = await ask(`Default instance (${names.join("/")})`, process.env.SERVICENOW_DEFAULT_INSTANCE || names[0]);
+    setVar("SERVICENOW_DEFAULT_INSTANCE", defaultInstance, { plain: true });
   }
 
-  // The background-script tool (sn_script_execute, sn_acl_create/update) logs
-  // in via ServiceNow's UI form regardless of auth method, so it always needs
-  // its own real username/password -- ask separately unless basic already covered it.
-  if (method !== "basic") {
-    heading("Background-script access (optional)");
-    hint("sn_script_execute and the ACL write tools (sn_acl_create/update) log in");
-    hint("through ServiceNow's own UI form (sys.scripts.do), not a REST endpoint --");
-    hint("there's no OAuth or bearer-token equivalent for that specific login, so");
-    hint("they always need a real username/password regardless of your auth method");
-    hint("above. Skip this if you won't use those tools.");
-    const wantBg = await ask("Set/update SERVICENOW_USERNAME/PASSWORD for that? (y/n)", "y");
-    if (wantBg.toLowerCase().startsWith("y")) {
-      setVar("SERVICENOW_USERNAME", await ask("Username", process.env.SERVICENOW_USERNAME), { plain: true });
-      setVar("SERVICENOW_PASSWORD", await askSecret("Password", !!process.env.SERVICENOW_PASSWORD));
-    }
-  }
+  heading("Script execution (optional)");
+  hint("sn_script_execute / sn_script_execute_query run arbitrary server-side");
+  hint("JavaScript -- the highest-impact capability this server exposes. Keep");
+  hint("this off unless you specifically need ad-hoc scripting.");
+  const enableScriptExecute = await ask(
+    "Enable script execution? (y/n)",
+    process.env.SERVICENOW_ENABLE_SCRIPT_EXECUTE === "true" ? "y" : "n"
+  );
+  setVar("SERVICENOW_ENABLE_SCRIPT_EXECUTE", enableScriptExecute.toLowerCase().startsWith("y") ? "true" : "false", { plain: true });
 
   rl.close();
 

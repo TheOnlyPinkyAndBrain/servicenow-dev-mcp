@@ -47,8 +47,7 @@ export function registerExecuteTools(
   server: McpServer,
   client: ServiceNowClient,
   mode: Mode,
-  enableScriptExecute: boolean,
-  instanceUrl: string
+  enableScriptExecute: boolean
 ): void {
   // Gated behind mode === "develop" *and* a separate explicit opt-in
   // (SERVICENOW_ENABLE_SCRIPT_EXECUTE=true). These tools run arbitrary
@@ -92,7 +91,11 @@ export function registerExecuteTools(
         const effectiveScope = scope ?? "global";
         const elevate = elevate_security_admin ?? false;
 
-        const confirmation = await confirmScriptExecution(server, instanceUrl, script, effectiveScope, elevate);
+        // Resolve which instance is active (running the multi-instance
+        // elicitation prompt if this is the first call of the session)
+        // before showing *that* instance's URL in the confirmation prompt.
+        await client.resolveActiveInstance();
+        const confirmation = await confirmScriptExecution(server, client.getInstanceUrl(), script, effectiveScope, elevate);
         if (!confirmation.proceed) {
           return errorResult(
             new Error(`Script execution was not confirmed${confirmation.reason ? `: ${confirmation.reason}` : "."}`)
@@ -185,7 +188,8 @@ export function registerExecuteTools(
           .filter(Boolean)
           .join("\n");
 
-        const confirmation = await confirmScriptExecution(server, instanceUrl, script, "global", false);
+        await client.resolveActiveInstance();
+        const confirmation = await confirmScriptExecution(server, client.getInstanceUrl(), script, "global", false);
         if (!confirmation.proceed) {
           return errorResult(
             new Error(`Script execution was not confirmed${confirmation.reason ? `: ${confirmation.reason}` : "."}`)

@@ -1,4 +1,4 @@
-import type { ServiceNowConfig } from "./types.js";
+import type { InstanceConfig } from "./types.js";
 
 // Refresh this many seconds before actual expiry to avoid racing a
 // request against a token that dies mid-flight.
@@ -130,7 +130,7 @@ class OAuthAuthProvider implements AuthProvider {
   }
 }
 
-export function createAuthProvider(config: ServiceNowConfig): AuthProvider {
+export function createAuthProvider(config: InstanceConfig): AuthProvider {
   switch (config.authMethod) {
     case "bearer":
       return new BearerTokenAuthProvider(config.accessToken!);

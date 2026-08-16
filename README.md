@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A comprehensive MCP (Model Context Protocol) server that gives AI assistants expert-level access to any ServiceNow module. **371 tools across 54 modules.** Connects to a ServiceNow instance via Basic Auth, OAuth, or a bearer token and provides tools for debugging, inspecting configuration, and building features across the entire platform.
+A comprehensive MCP (Model Context Protocol) server that gives AI assistants expert-level access to any ServiceNow module. **373 tools across 54 modules.** Connects to a ServiceNow instance via Basic Auth, OAuth, or a bearer token and provides tools for debugging, inspecting configuration, and building features across the entire platform.
 
 ## Coverage model
 
@@ -20,7 +20,7 @@ Tools are organized into folders named after ServiceNow product modules (matchin
 | ServiceNow module | Folder | Tools | Details |
 |-------------------|--------|------:|---------|
 | IT Service Management (ITSM) | `it-service-management` | 65 | [README](src/tools/it-service-management/README.md) |
-| Now Platform (core) | `now-platform` | 83 | [README](src/tools/now-platform/README.md) |
+| Now Platform (core) | `now-platform` | 85 | [README](src/tools/now-platform/README.md) |
 | Source-to-Pay Operations | `source-to-pay-operations` | 58 | [README](src/tools/source-to-pay-operations/README.md) |
 | ServiceNow Platform (CMDB, Knowledge, Interaction, Skills) | `servicenow-platform` | 26 | [README](src/tools/servicenow-platform/README.md) |
 | Application Development | `application-development` | 28 | [README](src/tools/application-development/README.md) |
@@ -35,7 +35,7 @@ Tools are organized into folders named after ServiceNow product modules (matchin
 | Governance, Risk & Compliance (GRC) | `governance-risk-compliance` | 6 | [README](src/tools/governance-risk-compliance/README.md) |
 | Platform Analytics | `now-intelligence` | 7 | [README](src/tools/now-intelligence/README.md) |
 
-_54 tool modules · 371 tools across 15 ServiceNow module folders._
+_54 tool modules · 373 tools across 15 ServiceNow module folders._
 
 ## Capabilities
 
@@ -217,7 +217,13 @@ SERVICENOW_ENV_FILE=.env npm run dev
 
 ## Multiple Instances
 
-Create separate env files per instance (`.env`, `.env.prod`, etc.) and switch with `SERVICENOW_ENV_FILE`.
+Two ways to work across more than one ServiceNow instance, depending on what you need:
+
+**One server, several instances (recommended for switching within a session).** Set `SERVICENOW_INSTANCES=dev,prod` and repeat the vars from `.env.example` per instance as `SERVICENOW_INSTANCE_<NAME>_*` (name uppercased) — see the "Multiple instances" block at the bottom of `.env.example`, or run `npm run setup` and answer "y" to "Configure multiple instances?". `SERVICENOW_MODE`/`SERVICENOW_ENABLE_SCRIPT_EXECUTE` stay process-wide, applying no matter which instance is active.
+
+With more than one instance configured, an MCP client that supports elicitation (Claude Code/Desktop) asks which instance to use the first time a tool actually needs to talk to ServiceNow in a session — `SERVICENOW_DEFAULT_INSTANCE` picks the fallback for clients that don't support that, or if the prompt is declined. Switch instances mid-conversation with `sn_instance_switch`; list what's configured (and which is active) with `sn_instance_list`. Both work in `debug` mode — they're session/config metadata, not a ServiceNow write.
+
+**Separate server processes (simplest for a fixed dev/prod split).** Create separate env files per instance (`.env.dev`, `.env.prod`, etc.) and either switch which one a single client points at via `SERVICENOW_ENV_FILE`, or register two separate entries in `.mcp.json` (see below) — each spawns its own single-instance server process, always available side by side without any switching step.
 
 ## Claude Code Integration
 

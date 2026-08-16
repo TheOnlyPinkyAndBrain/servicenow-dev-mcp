@@ -18,6 +18,7 @@ import { registerEmailTools } from "./now-platform/email.js";
 import { registerDomainTools } from "./now-platform/domain.js";
 import { registerScopeTools } from "./now-platform/scope.js";
 import { registerUpgradeTools } from "./now-platform/upgrade.js";
+import { registerInstanceTools } from "./now-platform/instance.js";
 
 // Platform Security / UI
 import { registerSecurityTools } from "./platform-security/security.js";
@@ -86,9 +87,8 @@ export type Registrar = (
 /**
  * Single source of truth for every tool module registered by the server,
  * except registerExecuteTools: that one is gated by an extra opt-in flag
- * (SERVICENOW_ENABLE_SCRIPT_EXECUTE) and the instance URL, not just mode, so
- * it doesn't fit the Registrar signature and is registered separately in
- * src/index.ts.
+ * (SERVICENOW_ENABLE_SCRIPT_EXECUTE) on top of mode, so it doesn't fit the
+ * Registrar signature and is registered separately in src/index.ts.
  */
 export const registrars: Registrar[] = [
   // Now Platform (core)
@@ -107,6 +107,7 @@ export const registrars: Registrar[] = [
   registerDomainTools,
   registerScopeTools,
   registerUpgradeTools,
+  registerInstanceTools,
 
   // Platform Security / UI
   registerSecurityTools,

@@ -1,4 +1,5 @@
-import type { ServiceNowConfig, QueryParams, PaginatedResult, BackgroundScriptResult } from "./types.js";
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { AuthMethod, InstanceConfig, ServiceNowConfig, QueryParams, PaginatedResult, BackgroundScriptResult } from "./types.js";
 import { createAuthProvider, type AuthProvider } from "./auth.js";
 
 // Printed by the elevation prelude when the background-script account
@@ -27,17 +28,125 @@ export class ServiceNowClient {
   // exposes it via the sys.scripts.do UI page, which needs a real form
   // login and session cookies. These fall back to SERVICENOW_USERNAME/
   // PASSWORD even when the primary authMethod is bearer/oauth.
-  private readonly backgroundScriptUsername?: string;
-  private readonly backgroundScriptPassword?: string;
+  private backgroundScriptUsername?: string;
+  private backgroundScriptPassword?: string;
   private sessionCookies: string | null = null;
   private csrfToken: string | null = null;
 
-  constructor(config: ServiceNowConfig) {
-    this.instanceUrl = config.instanceUrl;
-    this.baseUrl = `${config.instanceUrl}/api/now/table`;
-    this.authProvider = createAuthProvider(config);
-    this.backgroundScriptUsername = config.username;
-    this.backgroundScriptPassword = config.password;
+  private readonly instances: Record<string, InstanceConfig>;
+  private activeInstanceName: string;
+  // Multi-instance selection (elicitation prompt or silent single-instance
+  // default) only needs to happen once per process -- after that, whatever
+  // is active stays active until an explicit sn_instance_switch call.
+  private instanceResolved = false;
+
+  constructor(
+    private readonly config: ServiceNowConfig,
+    private readonly server: McpServer
+  ) {
+    this.instances = config.instances;
+    this.activeInstanceName = config.defaultInstance;
+    const defaultInstanceConfig = config.instances[config.defaultInstance];
+    this.instanceUrl = "";
+    this.baseUrl = "";
+    this.authProvider = createAuthProvider(defaultInstanceConfig);
+    this.applyInstance(defaultInstanceConfig, config.defaultInstance);
+  }
+
+  private applyInstance(instanceConfig: InstanceConfig, name: string): void {
+    this.instanceUrl = instanceConfig.instanceUrl;
+    this.baseUrl = `${instanceConfig.instanceUrl}/api/now/table`;
+    this.authProvider = createAuthProvider(instanceConfig);
+    this.backgroundScriptUsername = instanceConfig.username;
+    this.backgroundScriptPassword = instanceConfig.password;
+    // A session/CSRF token from a different instance is meaningless here.
+    this.sessionCookies = null;
+    this.csrfToken = null;
+    this.activeInstanceName = name;
+  }
+
+  // Runs at most once per process. With a single configured instance, this
+  // is a silent no-op (already applied at construction). With more than
+  // one, it asks the human which to use via the MCP client's elicitation UI
+  // -- on a client that doesn't support elicitation, or on decline/cancel,
+  // it silently keeps whatever SERVICENOW_DEFAULT_INSTANCE (or the first
+  // configured instance) already set at construction.
+  private async ensureActiveInstance(): Promise<void> {
+    if (this.instanceResolved) return;
+    this.instanceResolved = true;
+
+    const names = Object.keys(this.instances);
+    if (names.length <= 1) return;
+
+    try {
+      const result = await this.server.server.elicitInput({
+        mode: "form",
+        message:
+          `Multiple ServiceNow instances are configured (${names.join(", ")}). ` +
+          `Which one should this session use? Defaulting to "${this.config.defaultInstance}" ` +
+          "if not answered. You can switch later with sn_instance_switch.",
+        requestedSchema: {
+          type: "object",
+          properties: {
+            instance: {
+              type: "string",
+              title: "ServiceNow instance",
+              description: "Pick which configured instance this session talks to.",
+              enum: names,
+              enumNames: names.map((n) => `${n} (${this.instances[n].instanceUrl})`),
+              default: this.config.defaultInstance,
+            },
+          },
+          required: ["instance"],
+        },
+      });
+
+      if (result.action === "accept") {
+        const chosen = result.content?.instance;
+        if (typeof chosen === "string" && this.instances[chosen]) {
+          this.applyInstance(this.instances[chosen], chosen);
+        }
+      }
+      // decline/cancel -- keep the default already applied at construction.
+    } catch {
+      // Client doesn't support elicitation (or the request itself failed) --
+      // keep the default silently rather than blocking every tool call.
+    }
+  }
+
+  // Exposed for tools (e.g. sn_script_execute) that need the active
+  // instance's URL for their own purposes (a confirmation prompt) before
+  // making a request themselves.
+  async resolveActiveInstance(): Promise<void> {
+    await this.ensureActiveInstance();
+  }
+
+  getInstanceUrl(): string {
+    return this.instanceUrl;
+  }
+
+  getActiveInstanceName(): string {
+    return this.activeInstanceName;
+  }
+
+  listInstances(): Array<{ name: string; instanceUrl: string; authMethod: AuthMethod; active: boolean }> {
+    return Object.entries(this.instances).map(([name, cfg]) => ({
+      name,
+      instanceUrl: cfg.instanceUrl,
+      authMethod: cfg.authMethod,
+      active: name === this.activeInstanceName,
+    }));
+  }
+
+  async switchInstance(name: string): Promise<void> {
+    const instanceConfig = this.instances[name];
+    if (!instanceConfig) {
+      throw new Error(
+        `Unknown instance "${name}". Configured instances: ${Object.keys(this.instances).join(", ")}`
+      );
+    }
+    this.applyInstance(instanceConfig, name);
+    this.instanceResolved = true; // an explicit switch also settles selection for the session
   }
 
   private buildUrl(tableName: string, sysId?: string): string {
@@ -60,6 +169,10 @@ export class ServiceNowClient {
     return qs ? `?${qs}` : "";
   }
 
+  // Callers must resolve the active instance (via ensureActiveInstance())
+  // themselves before building a URL from this.baseUrl/this.instanceUrl --
+  // by the time a URL string reaches this method it's too late to redirect
+  // it to a different instance's host.
   private async request<T>(
     method: string,
     url: string,
@@ -117,6 +230,7 @@ export class ServiceNowClient {
     tableName: string,
     params: QueryParams = {}
   ): Promise<PaginatedResult<T>> {
+    await this.ensureActiveInstance();
     const limit = params.sysparm_limit ?? 20;
     const offset = params.sysparm_offset ?? 0;
     const url =
@@ -137,6 +251,7 @@ export class ServiceNowClient {
     sysId: string,
     fields?: string
   ): Promise<T> {
+    await this.ensureActiveInstance();
     const params: QueryParams = {};
     if (fields) params.sysparm_fields = fields;
     const url = this.buildUrl(tableName, sysId) + this.buildQueryString(params);
@@ -148,6 +263,7 @@ export class ServiceNowClient {
     tableName: string,
     body: Record<string, unknown>
   ): Promise<T> {
+    await this.ensureActiveInstance();
     const url = this.buildUrl(tableName);
     const { data } = await this.request<{ result: T }>("POST", url, body);
     return data.result;
@@ -158,12 +274,14 @@ export class ServiceNowClient {
     sysId: string,
     body: Record<string, unknown>
   ): Promise<T> {
+    await this.ensureActiveInstance();
     const url = this.buildUrl(tableName, sysId);
     const { data } = await this.request<{ result: T }>("PATCH", url, body);
     return data.result;
   }
 
   async delete(tableName: string, sysId: string): Promise<void> {
+    await this.ensureActiveInstance();
     const url = this.buildUrl(tableName, sysId);
     await this.request("DELETE", url);
   }
@@ -180,6 +298,7 @@ export class ServiceNowClient {
       sysparm_max_fields?: string;
     }
   ): Promise<Record<string, unknown>[]> {
+    await this.ensureActiveInstance();
     const searchParams = new URLSearchParams();
     if (params.sysparm_query) searchParams.set("sysparm_query", params.sysparm_query);
     if (params.sysparm_group_by) searchParams.set("sysparm_group_by", params.sysparm_group_by);
@@ -199,6 +318,7 @@ export class ServiceNowClient {
     apiPath: string,
     body?: Record<string, unknown>
   ): Promise<T> {
+    await this.ensureActiveInstance();
     const url = `${this.instanceUrl}${apiPath}`;
     const { data } = await this.request<T>(method, url, body);
     return data;
@@ -298,6 +418,7 @@ export class ServiceNowClient {
     scope: string = "global",
     elevateSecurityAdmin = false
   ): Promise<BackgroundScriptResult> {
+    await this.ensureActiveInstance();
     await this.ensureSession();
 
     const effectiveScript = elevateSecurityAdmin
@@ -352,6 +473,7 @@ export class ServiceNowClient {
     tableSysId?: string,
     params: { sysparm_limit?: number; sysparm_offset?: number } = {}
   ): Promise<{ records: Record<string, unknown>[]; totalCount: number }> {
+    await this.ensureActiveInstance();
     const searchParams = new URLSearchParams();
     const queryParts: string[] = [];
     if (tableName) queryParts.push(`table_name=${tableName}`);
@@ -366,19 +488,22 @@ export class ServiceNowClient {
   }
 
   async attachmentGetById(sysId: string): Promise<Record<string, unknown>> {
-    const url = `${this.instanceUrl}/api/now/attachment/${sysId}`;
+    await this.ensureActiveInstance();
+    const url = `${this.instanceUrl}/api/now/attachment/${encodeURIComponent(sysId)}`;
     const { data } = await this.request<{ result: Record<string, unknown> }>("GET", url);
     return data.result;
   }
 
   async attachmentDelete(sysId: string): Promise<void> {
-    const url = `${this.instanceUrl}/api/now/attachment/${sysId}`;
+    await this.ensureActiveInstance();
+    const url = `${this.instanceUrl}/api/now/attachment/${encodeURIComponent(sysId)}`;
     await this.request("DELETE", url);
   }
 
   async batchRequest(
     requests: Array<{ id: string; url: string; method: string; body?: Record<string, unknown>; headers?: Array<{ name: string; value: string }> }>
   ): Promise<Record<string, unknown>> {
+    await this.ensureActiveInstance();
     const url = `${this.instanceUrl}/api/now/v1/batch`;
     const payload = {
       batch_request_id: Date.now().toString(),
