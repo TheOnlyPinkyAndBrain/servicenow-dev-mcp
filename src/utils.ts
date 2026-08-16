@@ -26,16 +26,16 @@ export function buildQuery(parts: string[]): string {
   return parts.filter(Boolean).join("^");
 }
 
-// For writes to tables ServiceNow itself refuses without an active
-// security_admin elevation (e.g. sys_security_acl) — there's no REST path
-// that can carry a session's elevated flag, so these always go through the
-// background-script engine with elevation forced on, rather than the plain
-// Table API used by every other create/update tool in this server.
-export async function runElevatedGlideRecordWrite(
+// Shared implementation for the two write helpers below. Field-level write
+// checks on some tables are evaluated differently for GlideRecord (server
+// script context) than for the plain REST Table API, so this path exists
+// for the specific tables/fields where the Table API alone isn't sufficient.
+async function runGlideRecordWrite(
   client: ServiceNowClient,
-  script: string
+  script: string,
+  elevate: boolean
 ): Promise<{ isError?: true; content: { type: "text"; text: string }[] }> {
-  const result = await client.executeBackgroundScript(script, "global", true);
+  const result = await client.executeBackgroundScript(script, "global", elevate);
 
   if (!result.success) {
     return errorResult(new Error(result.error ?? "Script execution failed"));
@@ -48,12 +48,52 @@ export async function runElevatedGlideRecordWrite(
     );
   }
   try {
-    const parsed = JSON.parse(result.output) as { error?: boolean; message?: string };
+    const parsed = parseGlideRecordWriteOutput(result.output) as { error?: boolean; message?: string };
     if (parsed.error) {
-      return errorResult(new Error(parsed.message ?? "Elevated write failed"));
+      return errorResult(new Error(parsed.message ?? "Write failed"));
     }
     return jsonResult(parsed);
   } catch {
     return errorResult(new Error(result.output));
   }
+}
+
+// Background-script output can include incidental platform log lines ahead
+// of our gs.print() JSON (e.g. a form-cache-flush notice triggered by the
+// write itself), so a plain JSON.parse() on the full string can fail even
+// though the write succeeded. Fall back to the last brace-delimited block.
+function parseGlideRecordWriteOutput(output: string): unknown {
+  const trimmed = output.trim();
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    const match = trimmed.match(/\{[\s\S]*\}\s*$/);
+    if (!match) throw new Error("no JSON object found in background-script output");
+    return JSON.parse(match[0]);
+  }
+}
+
+// For writes to tables ServiceNow itself refuses without an active
+// security_admin elevation (e.g. sys_security_acl) — there's no REST path
+// that can carry a session's elevated flag, so these always go through the
+// background-script engine with elevation forced on, rather than the plain
+// Table API used by every other create/update tool in this server.
+export async function runElevatedGlideRecordWrite(
+  client: ServiceNowClient,
+  script: string
+): Promise<{ isError?: true; content: { type: "text"; text: string }[] }> {
+  return runGlideRecordWrite(client, script, true);
+}
+
+// For specific fields where the plain Table API rejects the write outright
+// (independent of the account's roles) but a background-script GlideRecord
+// write is the platform-supported way to set them programmatically -- e.g.
+// sys_ui_policy_action.ui_policy, which is normally populated by the UI's
+// own related-list flow rather than a direct API write. No elevation is
+// needed or requested here.
+export async function runUnelevatedGlideRecordWrite(
+  client: ServiceNowClient,
+  script: string
+): Promise<{ isError?: true; content: { type: "text"; text: string }[] }> {
+  return runGlideRecordWrite(client, script, false);
 }
