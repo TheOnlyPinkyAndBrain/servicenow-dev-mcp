@@ -2,7 +2,40 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A comprehensive MCP (Model Context Protocol) server that gives AI assistants expert-level access to any ServiceNow module. **314 tools across 44 modules.** Connects to a ServiceNow instance via Basic Auth, OAuth, or a bearer token and provides tools for debugging, inspecting configuration, and building features across the entire platform.
+A comprehensive MCP (Model Context Protocol) server that gives AI assistants expert-level access to any ServiceNow module. **371 tools across 54 modules.** Connects to a ServiceNow instance via Basic Auth, OAuth, or a bearer token and provides tools for debugging, inspecting configuration, and building features across the entire platform.
+
+## Coverage model
+
+The ServiceNow product documentation spans ~49,000 topics, so this server does **not** ship a tool per feature. Instead it combines two layers, which together give complete, practical coverage:
+
+1. **Universal access (generic tools).** `sn_table_query` / `sn_table_get` / `sn_table_create` / `sn_table_update` / `sn_table_delete`, `sn_aggregate`, `sn_schema_*`, `sn_rest_api_*`, and `sn_batch_request` can read and write **any** table and invoke **any** REST API on the instance. Anything in ServiceNow that is programmatically accessible is reachable today, with no new tool required.
+2. **Ergonomic tools (curated).** The `sn_<module>_*` tools are first-class wrappers for high-value workflows — typed parameters, `debug`/`develop` mode-gating, curated field selection, related-record fetch, and dedicated ServiceNow APIs (IRE, `sn_chg_rest`, Service Catalog, Knowledge, CMDB Instance).
+
+So **"coverage" means: high-value capability areas have dedicated ergonomic tools; everything else stays reachable through the generic layer.** Module-by-module passes expand the ergonomic layer where it adds the most value (each pass: completeness vs. the docs + MCP annotations + unit tests + live-instance field verification). Low-value or niche areas are intentionally served by the generic layer rather than bespoke tools.
+
+## Modules
+
+Tools are organized into folders named after ServiceNow product modules (matching the [official ServiceNow docs](https://www.servicenow.com/docs) taxonomy). Each folder has its own README listing every tool and whether it needs `develop` mode.
+
+| ServiceNow module | Folder | Tools | Details |
+|-------------------|--------|------:|---------|
+| IT Service Management (ITSM) | `it-service-management` | 65 | [README](src/tools/it-service-management/README.md) |
+| Now Platform (core) | `now-platform` | 83 | [README](src/tools/now-platform/README.md) |
+| Source-to-Pay Operations | `source-to-pay-operations` | 58 | [README](src/tools/source-to-pay-operations/README.md) |
+| ServiceNow Platform (CMDB, Knowledge, Interaction, Skills) | `servicenow-platform` | 26 | [README](src/tools/servicenow-platform/README.md) |
+| Application Development | `application-development` | 28 | [README](src/tools/application-development/README.md) |
+| Platform User Interface | `platform-user-interface` | 26 | [README](src/tools/platform-user-interface/README.md) |
+| Integration | `integrate-applications` | 22 | [README](src/tools/integrate-applications/README.md) |
+| IT Asset Management (ITAM) | `it-asset-management` | 8 | [README](src/tools/it-asset-management/README.md) |
+| Platform Security | `platform-security` | 16 | [README](src/tools/platform-security/README.md) |
+| Employee Service Management (HRSD) | `employee-service-management` | 7 | [README](src/tools/employee-service-management/README.md) |
+| Security Operations (SecOps) | `security-management` | 7 | [README](src/tools/security-management/README.md) |
+| Customer Service Management (CSM) | `customer-service-management` | 6 | [README](src/tools/customer-service-management/README.md) |
+| IT Operations Management (ITOM) | `it-operations-management` | 6 | [README](src/tools/it-operations-management/README.md) |
+| Governance, Risk & Compliance (GRC) | `governance-risk-compliance` | 6 | [README](src/tools/governance-risk-compliance/README.md) |
+| Platform Analytics | `now-intelligence` | 7 | [README](src/tools/now-intelligence/README.md) |
+
+_54 tool modules · 371 tools across 15 ServiceNow module folders._
 
 ## Capabilities
 
@@ -37,15 +70,15 @@ This server covers **every major ServiceNow module** — giving an AI assistant 
 ### Service Management
 | Module | Tools | What you can do |
 |--------|-------|----------------|
-| **Service Catalog** | 12 | Browse items, variables, variable sets, client scripts, RITMs, catalog tasks; Catalog UI Policy Action CRUD via background-script engine |
+| **Service Catalog** | 16 | Browse items, variables, variable sets, client scripts, RITMs, catalog tasks; order items and manage the cart via the Service Catalog API; Catalog UI Policy Action CRUD via background-script engine |
 | **Knowledge Management** | 8 | Search articles (KM API), browse bases/categories, manage feedback, create/update articles |
 | **Service Portal** | 6 | Inspect portals, pages, widgets (HTML/CSS/scripts), themes, Angular providers |
 
 ### CMDB & ITAM
 | Module | Tools | What you can do |
 |--------|-------|----------------|
-| **Configuration Items** | 15 | Browse CIs, relationships, CI classes, impacts; ACL writes auto-elevated to security_admin; UI Policy Action creation via background-script engine |
-| **CMDB** | 4 | CI class hierarchy, relationship types |
+| **Configuration Items** | 11 | Browse CIs, relationships, CI classes, impacts |
+| **CMDB** | 8 | CI class hierarchy, relationship types; read/create/update CIs via the CMDB Instance API and Identification & Reconciliation (IRE) engine |
 | **IT Asset Management** | 8 | Hardware assets, software licenses, software installations, product models |
 
 ### ITOM (IT Operations Management)
@@ -212,13 +245,16 @@ SERVICENOW_ENV_FILE=.env npx @modelcontextprotocol/inspector node dist/index.js
 
 ## Claude Code Skills
 
-This project includes a Claude Code skill for S2P development and debugging:
+This project includes Claude Code skills:
 
 ```
 /servicenow-sourcing-procurement [describe what you want to debug or develop]
+/servicenow-mcp-doc-review        [optional: focus a module/API area]
 ```
 
-The skill provides:
+`servicenow-mcp-doc-review` audits the MCP's tool coverage against ServiceNow's documentation (using the local docs clone when available) and produces a prioritized improvement plan.
+
+The S2P skill provides:
 - **Live instance schema discovery** — query `sys_dictionary` and `sys_db_object` to find tables and columns
 - **Plugin validation** — verify S2P plugins (`sn_shop`, `sn_fin`, `sn_ap_apm`, etc.) are installed and active
 - **Workflow debugging** — trace sourcing requests end-to-end, debug approval routing, invoice matching failures, and ERP integration errors

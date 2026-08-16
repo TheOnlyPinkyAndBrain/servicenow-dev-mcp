@@ -175,9 +175,9 @@ Every tool in this project follows this exact pattern. Use it when adding new to
 ```typescript
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import type { ServiceNowClient } from "../client.js";
-import type { Mode } from "../types.js";
-import { errorResult, jsonResult } from "../utils.js";
+import type { ServiceNowClient } from "../../client.js";
+import type { Mode } from "../../types.js";
+import { errorResult, jsonResult } from "../../utils.js";
 
 export function registerXxxTools(server: McpServer, client: ServiceNowClient, mode: Mode): void {
   // Read-only tools — registered in both debug and develop modes
@@ -224,7 +224,7 @@ export function registerXxxTools(server: McpServer, client: ServiceNowClient, mo
     "Create a new xxx record.",
     {
       name: z.string().describe("Name of the record"),
-      additional_fields: z.record(z.unknown()).optional().describe("Additional fields"),
+      additional_fields: z.record(z.string(), z.unknown()).optional().describe("Additional fields"),
     },
     async ({ name, additional_fields }) => {
       try {
@@ -249,17 +249,20 @@ export function registerXxxTools(server: McpServer, client: ServiceNowClient, mo
 6. **Add filters**: Add Zod parameters for commonly-filtered columns (status, name, type, etc.)
 7. **Use `sysparm_display_value: "true"`** for reference fields and choice lists
 8. **For "get" tools**: Use `Promise.all` to fetch related records in parallel (lines, tasks, etc.)
-9. **Register in `src/index.ts`**: Import and add to the `registrars` array
-10. **Build and verify**: `npm run build` — TypeScript catches most issues
-11. **Test against instance**: Use MCP Inspector or curl to verify the tool works
+9. **Place the file in its ServiceNow-module folder**: tool modules live in
+   `src/tools/<servicenow-module>/` — S2P tools go in `src/tools/source-to-pay-operations/`
+10. **Register in `src/index.ts`**: Import and add to the `registrars` array
+11. **Build and verify**: `npm run build` — TypeScript catches most issues
+12. **Test against instance**: Use MCP Inspector or curl to verify the tool works
 
 ### Registration in index.ts
 
-After creating `src/tools/your-module.ts`:
+After creating `src/tools/source-to-pay-operations/your-module.ts` (folder name matches the
+ServiceNow docs publication, `source-to-pay-operations`):
 
 ```typescript
-// In src/index.ts — add import
-import { registerYourModuleTools } from "./tools/your-module.js";
+// In src/index.ts — add import (note the module-folder path)
+import { registerYourModuleTools } from "./tools/source-to-pay-operations/your-module.js";
 
 // Add to the registrars array
 const registrars = [

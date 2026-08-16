@@ -1,7 +1,7 @@
 {
   "name": "servicenow-mcp",
-  "version": "3.0.0",
-  "description": "Comprehensive MCP server for ServiceNow — 314 tools across 44 modules for expert-level debugging and development",
+  "version": "3.13.0",
+  "description": "Comprehensive MCP server for ServiceNow — 356 tools across 54 modules for expert-level debugging and development",
   "license": "MIT",
   "type": "module",
   "main": "dist/index.js",
@@ -9,16 +9,19 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
-    "setup": "node scripts/setup.mjs"
+    "setup": "node scripts/setup.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@dotenvx/dotenvx": "^2.21.0",
-    "@modelcontextprotocol/sdk": "^1.12.1",
-    "zod": "^3.24.2"
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@types/node": "^22.13.10",
-    "tsx": "^4.19.3",
-    "typescript": "^5.8.2"
+    "@types/node": "^26.2.0",
+    "tsx": "^4.23.12",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
   }
 }
