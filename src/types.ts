@@ -27,6 +27,10 @@ export interface ServiceNowConfig {
   oauthGrantType?: OAuthGrantType;
   oauthUsername?: string;
   oauthPassword?: string;
+
+  // Opt-in gate for sn_script_execute/sn_script_execute_query, separate from
+  // and in addition to mode === "develop".
+  enableScriptExecute: boolean;
 }
 
 export interface QueryParams {

@@ -14,7 +14,20 @@ const configSchema = z
       .url("SERVICENOW_INSTANCE_URL must be a valid URL")
       .refine((url) => !url.endsWith("/"), {
         message: "SERVICENOW_INSTANCE_URL must not end with a trailing slash",
-      }),
+      })
+      .refine(
+        (url) =>
+          url.startsWith("https://") ||
+          /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(url),
+        {
+          // Basic auth sends credentials as a base64 Authorization header, and
+          // OAuth/bearer tokens go over the same connection -- http:// would put
+          // all of that on the wire in the clear. localhost/127.0.0.1 is exempt
+          // since that traffic never leaves the machine (e.g. a local dev proxy).
+          message:
+            "SERVICENOW_INSTANCE_URL must use https:// (plaintext http:// would send credentials unencrypted); http://localhost is allowed for local dev proxies only",
+        }
+      ),
     SERVICENOW_MODE: z.enum(["debug", "develop"]).default("debug"),
 
     SERVICENOW_AUTH_METHOD: z.enum(["basic", "bearer", "oauth"]).default("basic"),
@@ -32,6 +45,16 @@ const configSchema = z
     SERVICENOW_OAUTH_GRANT_TYPE: z.enum(["password", "client_credentials"]).default("password"),
     SERVICENOW_OAUTH_USERNAME: z.string().optional(),
     SERVICENOW_OAUTH_PASSWORD: z.string().optional(),
+
+    // Separate opt-in on top of SERVICENOW_MODE=develop, required for
+    // sn_script_execute/sn_script_execute_query. These run arbitrary
+    // server-side JS (optionally self-elevated to security_admin) -- the
+    // highest-impact tools in this server. Off by default so enabling
+    // develop mode for ordinary CRUD work doesn't silently also expose this.
+    SERVICENOW_ENABLE_SCRIPT_EXECUTE: z
+      .enum(["true", "false"])
+      .default("false")
+      .transform((v) => v === "true"),
   })
   .superRefine((data, ctx) => {
     const require = (field: keyof typeof data, message: string) => {
@@ -80,5 +103,6 @@ export function loadConfig(): ServiceNowConfig {
     oauthGrantType: data.SERVICENOW_OAUTH_GRANT_TYPE,
     oauthUsername: data.SERVICENOW_OAUTH_USERNAME,
     oauthPassword: data.SERVICENOW_OAUTH_PASSWORD,
+    enableScriptExecute: data.SERVICENOW_ENABLE_SCRIPT_EXECUTE,
   };
 }

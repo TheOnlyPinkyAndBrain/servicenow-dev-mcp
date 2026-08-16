@@ -102,7 +102,6 @@ const registrars = [
   registerSecurityTools,
   registerUiTools,
   registerUpdateSetTools,
-  registerExecuteTools,
   registerDataPolicyTools,
   registerAttachmentTools,
   registerBatchTools,
@@ -181,8 +180,15 @@ for (const register of registrars) {
   register(server, client, config.mode);
 }
 
+// Separate from the generic registrars above: sn_script_execute /
+// sn_script_execute_query need config.enableScriptExecute, not just
+// config.mode, since they're gated by both.
+registerExecuteTools(server, client, config.mode, config.enableScriptExecute, config.instanceUrl);
+
 console.error(
-  `ServiceNow MCP Server v3.0.0 started (mode: ${config.mode})`
+  `ServiceNow MCP Server v3.0.0 started (mode: ${config.mode}, script-execute: ${
+    config.mode === "develop" && config.enableScriptExecute ? "enabled" : "disabled"
+  })`
 );
 console.error(`Instance: ${config.instanceUrl}`);
 
