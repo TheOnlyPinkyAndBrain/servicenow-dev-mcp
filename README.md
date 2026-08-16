@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A comprehensive MCP (Model Context Protocol) server that gives AI assistants expert-level access to any ServiceNow module. **306 tools across 44 modules.** Connects to a ServiceNow instance via Basic Auth, OAuth, or a bearer token and provides tools for debugging, inspecting configuration, and building features across the entire platform.
+A comprehensive MCP (Model Context Protocol) server that gives AI assistants expert-level access to any ServiceNow module. **310 tools across 44 modules.** Connects to a ServiceNow instance via Basic Auth, OAuth, or a bearer token and provides tools for debugging, inspecting configuration, and building features across the entire platform.
 
 ## Capabilities
 
@@ -44,7 +44,7 @@ This server covers **every major ServiceNow module** — giving an AI assistant 
 ### CMDB & ITAM
 | Module | Tools | What you can do |
 |--------|-------|----------------|
-| **Configuration Items** | 11 | Browse CIs, relationships, CI classes, impacts; ACL writes auto-elevated to security_admin |
+| **Configuration Items** | 15 | Browse CIs, relationships, CI classes, impacts; ACL writes auto-elevated to security_admin; UI Policy Action creation via background-script engine |
 | **CMDB** | 4 | CI class hierarchy, relationship types |
 | **IT Asset Management** | 8 | Hardware assets, software licenses, software installations, product models |
 
@@ -109,6 +109,8 @@ This server covers **every major ServiceNow module** — giving an AI assistant 
 - **Debug mode** (default) — Read-only tools for safe investigation
 - **Develop mode** — Full CRUD for building features (includes all debug tools plus create/update/delete operations)
 
+`sn_script_execute`/`sn_script_execute_query` need `SERVICENOW_MODE=develop` **and** a separate `SERVICENOW_ENABLE_SCRIPT_EXECUTE=true` opt-in — see [Script Execution](#script-execution).
+
 ## Setup
 
 ```bash
@@ -125,6 +127,8 @@ SERVICENOW_PASSWORD=your-password
 SERVICENOW_MODE=debug
 ```
 
+`SERVICENOW_INSTANCE_URL` must be `https://` — the server refuses to start with a plaintext `http://` instance URL (credentials go out as a Basic Auth header / bearer token on every request). The only exception is `http://localhost[:port]`, for a local dev proxy.
+
 ## Authentication
 
 Set `SERVICENOW_AUTH_METHOD` to choose how the server authenticates. See `.env.example` for the full set of variables per method.
@@ -140,6 +144,19 @@ There's no in-app config page for switching this — MCP clients (Claude Desktop
 **Background-script tool:** regardless of `SERVICENOW_AUTH_METHOD`, keep `SERVICENOW_USERNAME`/`SERVICENOW_PASSWORD` set if you want the background-script execution tool to work. It logs in through ServiceNow's UI (`sys.scripts.do`) rather than a REST endpoint, so it always needs a real username/password session — there's no OAuth or bearer-token equivalent for it.
 
 **Company/Microsoft SSO:** this server runs headless, so it can't complete an interactive Azure AD login. If your instance enforces SSO for all users, either use a ServiceNow integration account excluded from SSO enforcement with the `oauth` method, or — if your instance's Multi-Provider SSO is configured to accept externally-issued Azure AD tokens for API auth — obtain that token yourself (e.g. via an MSAL client-credentials flow) and supply it through `SERVICENOW_AUTH_METHOD=bearer`.
+
+## Script Execution
+
+`sn_script_execute`/`sn_script_execute_query` run arbitrary server-side JavaScript against the instance via the Background Scripts engine — the highest-impact capability this server exposes, roughly equivalent to shell access on the instance. They're gated behind two independent settings that must both be set:
+
+1. `SERVICENOW_MODE=develop`
+2. `SERVICENOW_ENABLE_SCRIPT_EXECUTE=true`
+
+Turning on `develop` mode for ordinary create/update/delete work does **not** by itself expose script execution — the second flag is a deliberate, separate opt-in.
+
+**Per-call confirmation via elicitation.** On top of the two gates above, `sn_script_execute` asks the human to confirm the exact script through the MCP client's elicitation UI (protocol 2025-11-25, `elicitation/create`) before it runs — a runtime prompt, not just a one-time env var. If the connected client doesn't support elicitation, the tool falls back to running on the two gates alone rather than becoming permanently unusable; any other elicitation failure (timeout, transport error) blocks execution. `sn_script_execute_query` does not prompt — it only builds a scoped, escaped GlideRecord query from structured parameters (table/query/fields), not free-form script.
+
+**If you enable this with an AI assistant driving the tool calls:** treat script content the same way you'd treat a command an assistant is about to run in a real shell. Don't let it construct or run a script based on content it read during the session (an incident description, a KB article, an email body, an attachment) — that data is untrusted and could contain instructions planted specifically to make the assistant execute something harmful. Only scripts the user explicitly asked for or wrote themselves should reach this tool.
 
 ## Role Elevation (security_admin)
 
