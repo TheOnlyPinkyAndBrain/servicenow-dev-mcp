@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServiceNowClient } from "../client.js";
 import type { Mode } from "../types.js";
-import { errorResult, jsonResult } from "../utils.js";
+import { errorResult, jsonResult, runUnelevatedGlideRecordWrite } from "../utils.js";
 
 export function registerCatalogTools(
   server: McpServer,
@@ -267,6 +267,115 @@ export function registerCatalogTools(
           count: result.records.length,
           records: result.records,
         });
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  // ========== Catalog UI Policy Actions ==========
+  // catalog_ui_policy_action extends sys_ui_policy_action (verified via
+  // schema table hierarchy), inheriting the 'ui_policy' field and the same
+  // deny ACLs (create + write) that block setting it via the plain Table
+  // API on this instance -- confirmed empirically, same as sys_ui_policy_action.
+
+  // sn_catalog_ui_policy_action_get — Both modes
+  server.tool(
+    "sn_catalog_ui_policy_action_get",
+    "Get a single Catalog UI Policy Action by sys_id",
+    {
+      sys_id: z.string().describe("The sys_id of the Catalog UI Policy Action"),
+    },
+    async ({ sys_id }) => {
+      try {
+        const record = await client.getById("catalog_ui_policy_action", sys_id);
+        return jsonResult(record);
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  if (mode !== "develop") return;
+
+  // sn_catalog_ui_policy_action_create — Develop only. Routes through the
+  // background-script engine (GlideRecord), same reason and same no-elevation
+  // approach as sn_ui_policy_action_create.
+  server.tool(
+    "sn_catalog_ui_policy_action_create",
+    "Create a new Catalog UI Policy Action (catalog_ui_policy_action) and link it to its parent Catalog UI Policy. Routes through the background-script engine rather than the plain Table API, because this instance's 'ui_policy' field isn't settable via a direct REST write (same as sn_ui_policy_action_create).",
+    {
+      data: z
+        .record(z.unknown())
+        .describe(
+          "Field-value pairs for the new Catalog UI Policy Action. Must include 'ui_policy' (sys_id of the " +
+          "parent Catalog UI Policy). Common fields: 'catalog_variable' (variable name), 'visible', 'mandatory', " +
+          "'disabled' (booleans)."
+        ),
+    },
+    async ({ data }) => {
+      const script = [
+        `var data = ${JSON.stringify(data)};`,
+        "var gr = new GlideRecord('catalog_ui_policy_action');",
+        "gr.initialize();",
+        "for (var key in data) { gr.setValue(key, data[key]); }",
+        "var sysId = gr.insert();",
+        "if (!sysId) {",
+        "  gs.print(JSON.stringify({ error: true, message: 'Catalog UI Policy Action insert failed', lastError: gr.getLastErrorMessage ? gr.getLastErrorMessage() : null }));",
+        "} else {",
+        "  var out = { sys_id: sysId };",
+        "  for (var k in data) { out[k] = gr.getValue(k); }",
+        "  gs.print(JSON.stringify(out));",
+        "}",
+      ].join("\n");
+
+      return runUnelevatedGlideRecordWrite(client, script);
+    }
+  );
+
+  // sn_catalog_ui_policy_action_update — Develop only. Same background-script
+  // route as create, for the same reason.
+  server.tool(
+    "sn_catalog_ui_policy_action_update",
+    "Update an existing Catalog UI Policy Action (catalog_ui_policy_action), including reassigning it via 'ui_policy'. Routes through the background-script engine for the same reason as sn_catalog_ui_policy_action_create.",
+    {
+      sys_id: z.string().describe("The sys_id of the Catalog UI Policy Action to update"),
+      data: z
+        .record(z.unknown())
+        .describe("Field-value pairs to update, e.g. 'ui_policy', 'catalog_variable', 'visible', 'mandatory', 'disabled'"),
+    },
+    async ({ sys_id, data }) => {
+      const script = [
+        `var sysId = ${JSON.stringify(sys_id)};`,
+        `var data = ${JSON.stringify(data)};`,
+        "var gr = new GlideRecord('catalog_ui_policy_action');",
+        "if (!gr.get(sysId)) {",
+        "  gs.print(JSON.stringify({ error: true, message: 'Catalog UI Policy Action not found: ' + sysId }));",
+        "} else {",
+        "  for (var key in data) { gr.setValue(key, data[key]); }",
+        "  gr.update();",
+        "  var out = { sys_id: sysId };",
+        "  for (var k in data) { out[k] = gr.getValue(k); }",
+        "  gs.print(JSON.stringify(out));",
+        "}",
+      ].join("\n");
+
+      return runUnelevatedGlideRecordWrite(client, script);
+    }
+  );
+
+  // sn_catalog_ui_policy_action_delete — Develop only. Plain Table API, like
+  // sn_ui_policy_action_delete -- the deny ACLs on 'ui_policy' don't cover delete.
+  server.tool(
+    "sn_catalog_ui_policy_action_delete",
+    "Delete a Catalog UI Policy Action (catalog_ui_policy_action) by sys_id",
+    {
+      sys_id: z.string().describe("The sys_id of the Catalog UI Policy Action to delete"),
+    },
+    async ({ sys_id }) => {
+      try {
+        await client.delete("catalog_ui_policy_action", sys_id);
+        return { content: [{ type: "text" as const, text: `Catalog UI Policy Action ${sys_id} deleted.` }] };
       } catch (error) {
         return errorResult(error);
       }
