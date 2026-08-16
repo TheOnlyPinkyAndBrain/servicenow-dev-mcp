@@ -130,7 +130,8 @@ export function registerExecuteTools(
 
   server.tool(
     "sn_script_execute_query",
-    "Execute a GlideRecord query via Background Scripts and return results as JSON. A convenience wrapper that builds the boilerplate for you — just specify table, query, and fields.",
+    "Execute a GlideRecord query via Background Scripts and return results as JSON. A convenience wrapper that builds the boilerplate for you — just specify table, query, and fields. " +
+      "Before running, this tool asks the human to confirm the exact generated script via the client's elicitation UI (if supported), exactly like sn_script_execute -- expect that prompt.",
     {
       table: z.string().describe("Table to query, e.g. 'incident'"),
       query: z.string().optional().describe("Encoded query string, e.g. 'active=true^priority=1'"),
@@ -147,11 +148,15 @@ export function registerExecuteTools(
       try {
         const maxRows = limit ?? 20;
         const useDisplay = display_value !== false;
-        const escapedQuery = query ? query.replace(/\\/g, "\\\\").replace(/'/g, "\\'") : "";
+        // Backslashes must be escaped before quotes -- otherwise a value
+        // ending in a backslash swallows the closing quote and lets the
+        // rest of the value execute as script instead of staying a string.
+        const escapeForScript = (s: string) => s.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+        const escapedQuery = query ? escapeForScript(query) : "";
 
         const fieldLines = fields
           .map((f) => {
-            const escaped = f.replace(/'/g, "\\'");
+            const escaped = escapeForScript(f);
             if (useDisplay) {
               return `  row['${escaped}'] = gr.getDisplayValue('${escaped}') || gr.getValue('${escaped}') || '';`;
             }
@@ -160,12 +165,12 @@ export function registerExecuteTools(
           .join("\n");
 
         const script = [
-          `var gr = new GlideRecord('${table.replace(/'/g, "\\'")}');`,
+          `var gr = new GlideRecord('${escapeForScript(table)}');`,
           escapedQuery ? `gr.addEncodedQuery('${escapedQuery}');` : "",
           order_by
             ? order_dir === "desc"
-              ? `gr.orderByDesc('${order_by.replace(/'/g, "\\'")}');`
-              : `gr.orderBy('${order_by.replace(/'/g, "\\'")}');`
+              ? `gr.orderByDesc('${escapeForScript(order_by)}');`
+              : `gr.orderBy('${escapeForScript(order_by)}');`
             : "",
           `gr.setLimit(${maxRows});`,
           "gr.query();",
@@ -179,6 +184,13 @@ export function registerExecuteTools(
         ]
           .filter(Boolean)
           .join("\n");
+
+        const confirmation = await confirmScriptExecution(server, instanceUrl, script, "global", false);
+        if (!confirmation.proceed) {
+          return errorResult(
+            new Error(`Script execution was not confirmed${confirmation.reason ? `: ${confirmation.reason}` : "."}`)
+          );
+        }
 
         const result = await client.executeBackgroundScript(script);
 

@@ -46,7 +46,7 @@ export function registerKnowledgeTools(
     READ,
     async ({ sys_id }) => {
       try {
-        const result = await client.restApi("GET", `/api/sn_km_api/knowledge/articles/${sys_id}`);
+        const result = await client.restApi("GET", `/api/sn_km_api/knowledge/articles/${encodeURIComponent(sys_id)}`);
         return jsonResult(result);
       } catch (error) {
         return errorResult(error);

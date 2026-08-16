@@ -41,8 +41,8 @@ export class ServiceNowClient {
   }
 
   private buildUrl(tableName: string, sysId?: string): string {
-    let url = `${this.baseUrl}/${tableName}`;
-    if (sysId) url += `/${sysId}`;
+    let url = `${this.baseUrl}/${encodeURIComponent(tableName)}`;
+    if (sysId) url += `/${encodeURIComponent(sysId)}`;
     return url;
   }
 

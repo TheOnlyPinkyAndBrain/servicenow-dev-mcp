@@ -250,7 +250,7 @@ export function registerCicdTools(
       try {
         const result = await client.restApi(
           "POST",
-          `/api/sn_cicd/plugin/${plugin_id}/activate`
+          `/api/sn_cicd/plugin/${encodeURIComponent(plugin_id)}/activate`
         );
         return jsonResult(result);
       } catch (error) {
