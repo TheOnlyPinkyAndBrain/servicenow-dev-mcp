@@ -1,6 +1,6 @@
 {
   "name": "servicenow-mcp",
-  "version": "3.12.0",
+  "version": "3.12.1",
   "description": "Comprehensive MCP server for ServiceNow — 356 tools across 54 modules for expert-level debugging and development",
   "license": "MIT",
   "type": "module",

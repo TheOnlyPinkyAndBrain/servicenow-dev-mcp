@@ -3,6 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServiceNowClient } from "../../client.js";
 import type { Mode } from "../../types.js";
 import { errorResult, jsonResult } from "../../utils.js";
+import { CREATE, READ, UPDATE } from "../../annotations.js";
 
 export function registerCsmTools(
   server: McpServer,
@@ -24,6 +25,7 @@ export function registerCsmTools(
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
       offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
     },
+    READ,
     async ({ priority, state, account, contact, product, assignment_group, active, query, limit, offset }) => {
       try {
         const qp: string[] = [];
@@ -57,6 +59,7 @@ export function registerCsmTools(
     {
       sys_id: z.string().describe("Case sys_id"),
     },
+    READ,
     async ({ sys_id }) => {
       try {
         const [caseRecord, caseTasks, communications] = await Promise.all([
@@ -89,6 +92,7 @@ export function registerCsmTools(
       active: z.boolean().optional().describe("Active status (default true)"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
     },
+    READ,
     async ({ name, account_code, active, limit }) => {
       try {
         const qp: string[] = [];
@@ -121,6 +125,7 @@ export function registerCsmTools(
       active: z.boolean().optional().describe("Active status"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
     },
+    READ,
     async ({ account, name, email, active, limit }) => {
       try {
         const qp: string[] = [];
@@ -157,6 +162,7 @@ export function registerCsmTools(
       assignment_group: z.string().optional().describe("Assignment group sys_id"),
       additional_fields: z.record(z.string(), z.unknown()).optional().describe("Additional fields"),
     },
+    CREATE,
     async ({ short_description, account, contact, priority, product, assignment_group, additional_fields }) => {
       try {
         const body: Record<string, unknown> = { short_description, ...additional_fields };
@@ -180,6 +186,7 @@ export function registerCsmTools(
       sys_id: z.string().describe("Case sys_id"),
       fields: z.record(z.string(), z.unknown()).describe("Fields to update"),
     },
+    UPDATE,
     async ({ sys_id, fields }) => {
       try {
         const result = await client.update("sn_customerservice_case", sys_id, fields);
