@@ -228,6 +228,23 @@ export class ServiceNowClient {
       redirect: "manual",
     });
 
+    // A 3xx redirect here (instead of Set-Cookie'd 200/302-to-home) means
+    // login.do didn't complete the session -- most commonly because the
+    // account now has Multi-Factor Authentication enforced, which redirects
+    // to validate_multifactor_auth_code.do and can't be completed headlessly
+    // (there's no REST/API equivalent to submit the MFA code). Surface this
+    // distinctly instead of failing later with an opaque "no CSRF token".
+    const loginLocation = loginResp.headers.get("location");
+    if (loginResp.status >= 300 && loginResp.status < 400 && loginLocation?.includes("multifactor_auth")) {
+      throw new Error(
+        `Background script execution failed: SERVICENOW_USERNAME requires Multi-Factor Authentication ` +
+          `(login.do redirected to ${loginLocation}), which this headless login flow cannot complete. ` +
+          `Either exclude this account from MFA enforcement on the instance (recommended: use a dedicated ` +
+          `integration account excluded from MFA, not a personal/admin account), or disable ` +
+          `SERVICENOW_ENABLE_SCRIPT_EXECUTE -- all other tools use the Table/REST API and are unaffected.`
+      );
+    }
+
     const loginCookies = loginResp.headers.getSetCookie();
 
     // Load the background scripts page to get CSRF token
