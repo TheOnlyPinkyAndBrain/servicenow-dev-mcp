@@ -65,10 +65,12 @@ Read-only tools (`both`) work in `debug` and `develop` modes; `develop` tools re
 | `sn_schema_references` | both | Find all reference fields pointing to or from a table. Helps understand relationships between tables. |
 | `sn_schema_table_hierarchy` | both | Get the full inheritance hierarchy for a table — shows parent chain up to the base table and all direct child tables. Critical for understanding ServiceNow's table-per-hierarchy model. |
 | `sn_schema_tables` | both | List or search ServiceNow tables (sys_db_object). Find tables by name or label. Returns table name, label, super_class, scope, and whether it's extendable. |
+| `sn_scope_current` | both | Show which application scope new records created by this session's Table API writes will be assigned to (the `apps.current_app` user preference) |
 | `sn_scope_list` | both | List application scopes (sys_scope) — all scoped applications and their access modes |
 | `sn_scope_pending_access` | both | List pending cross-scope access requests — requests awaiting admin approval |
 | `sn_scope_privilege_list` | both | List cross-scope access privilege records (sys_scope_privilege) — shows what cross-scope access has been requested, allowed, or denied |
 | `sn_scope_restricted_caller` | both | List restricted caller access records — controls which scoped apps can call which APIs |
+| `sn_scope_switch` | develop | Switch this session's current application scope (`apps.current_app`) so subsequent Table API writes land inside that scoped app instead of global — call this *before* creating scoped-app artifacts, since `sys_scope` is set at insert time and can't be corrected afterward |
 | `sn_script_execute` | develop | Execute a server-side script on the ServiceNow instance using the native Background Scripts engine (sys.scripts.do). Has full access to GlideRecord, GlideSystem (gs), GlideAggregate, GlideDateTime, and all server-side APIs. Use gs.print() to produce output. Exactly like running a script in the Background Scripts UI. |
 | `sn_script_execute_query` | develop | Execute a GlideRecord query via Background Scripts and return results as JSON. A convenience wrapper that builds the boilerplate for you — just specify table, query, and fields. |
 | `sn_sys_property_get` | both | Get a system property value by exact name |
