@@ -3,7 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServiceNowClient } from "../../client.js";
 import type { Mode } from "../../types.js";
 import { errorResult, jsonResult } from "../../utils.js";
-import { READ, UPDATE } from "../../annotations.js";
+import { DELETE, READ, UPDATE } from "../../annotations.js";
 
 export function registerSystemTools(
   server: McpServer,
@@ -474,6 +474,32 @@ export function registerSystemTools(
           const created = await client.create("sys_properties", data);
           return jsonResult(created);
         }
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_sys_property_delete",
+    "Delete a system property (sys_properties) by exact name.",
+    {
+      name: z.string().describe("Exact property name, e.g. 'glide.ui.list.edit'"),
+    },
+    DELETE,
+    async ({ name }) => {
+      try {
+        const existing = await client.query("sys_properties", {
+          sysparm_query: `name=${name}`,
+          sysparm_fields: "sys_id",
+          sysparm_limit: 1,
+        });
+        if (existing.records.length === 0) {
+          return errorResult(new Error(`Property '${name}' not found`));
+        }
+        const rec = existing.records[0] as { sys_id: string };
+        await client.delete("sys_properties", rec.sys_id);
+        return jsonResult({ success: true, message: `Property '${name}' deleted` });
       } catch (error) {
         return errorResult(error);
       }

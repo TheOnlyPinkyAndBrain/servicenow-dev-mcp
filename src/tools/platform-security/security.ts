@@ -3,12 +3,12 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServiceNowClient } from "../../client.js";
 import type { Mode } from "../../types.js";
 import { errorResult, jsonResult } from "../../utils.js";
-import { READ } from "../../annotations.js";
+import { CREATE, DELETE, READ, UPDATE } from "../../annotations.js";
 
 export function registerSecurityTools(
   server: McpServer,
   client: ServiceNowClient,
-  _mode: Mode
+  mode: Mode
 ): void {
   // ========== Users ==========
 
@@ -362,6 +362,181 @@ export function registerSecurityTools(
           sysparm_display_value: "true",
         });
         return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  if (mode !== "develop") return;
+
+  // ========== User writes ==========
+
+  server.tool(
+    "sn_user_create",
+    "Create a new user (sys_user).",
+    {
+      user_name: z.string().describe("Login username"),
+      first_name: z.string().optional().describe("First name"),
+      last_name: z.string().optional().describe("Last name"),
+      email: z.string().optional().describe("Email address"),
+      active: z.boolean().optional().describe("Active status (default true)"),
+      department: z.string().optional().describe("Department sys_id"),
+      manager: z.string().optional().describe("Manager's user sys_id"),
+      title: z.string().optional().describe("Job title"),
+      additional_fields: z.record(z.string(), z.unknown()).optional().describe("Additional field values"),
+    },
+    CREATE,
+    async ({ user_name, first_name, last_name, email, active, department, manager, title, additional_fields }) => {
+      try {
+        const body: Record<string, unknown> = { user_name, ...additional_fields };
+        if (first_name) body.first_name = first_name;
+        if (last_name) body.last_name = last_name;
+        if (email) body.email = email;
+        if (active !== undefined) body.active = active;
+        if (department) body.department = department;
+        if (manager) body.manager = manager;
+        if (title) body.title = title;
+
+        const result = await client.create("sys_user", body);
+        return jsonResult(result);
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_user_update",
+    "Update an existing user (sys_user).",
+    {
+      sys_id: z.string().describe("sys_id of the user to update"),
+      first_name: z.string().optional().describe("First name"),
+      last_name: z.string().optional().describe("Last name"),
+      email: z.string().optional().describe("Email address"),
+      active: z.boolean().optional().describe("Active status"),
+      department: z.string().optional().describe("Department sys_id"),
+      manager: z.string().optional().describe("Manager's user sys_id"),
+      title: z.string().optional().describe("Job title"),
+      additional_fields: z.record(z.string(), z.unknown()).optional().describe("Additional field values"),
+    },
+    UPDATE,
+    async ({ sys_id, first_name, last_name, email, active, department, manager, title, additional_fields }) => {
+      try {
+        const body: Record<string, unknown> = { ...additional_fields };
+        if (first_name) body.first_name = first_name;
+        if (last_name) body.last_name = last_name;
+        if (email) body.email = email;
+        if (active !== undefined) body.active = active;
+        if (department) body.department = department;
+        if (manager) body.manager = manager;
+        if (title) body.title = title;
+
+        const result = await client.update("sys_user", sys_id, body);
+        return jsonResult(result);
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  // ========== Group writes ==========
+
+  server.tool(
+    "sn_group_create",
+    "Create a new group (sys_user_group).",
+    {
+      name: z.string().describe("Group name"),
+      description: z.string().optional().describe("Description"),
+      type: z.string().optional().describe("Group type"),
+      active: z.boolean().optional().describe("Active status (default true)"),
+      manager: z.string().optional().describe("Manager's user sys_id"),
+      email: z.string().optional().describe("Group email"),
+      parent: z.string().optional().describe("Parent group sys_id"),
+      additional_fields: z.record(z.string(), z.unknown()).optional().describe("Additional field values"),
+    },
+    CREATE,
+    async ({ name, description, type, active, manager, email, parent, additional_fields }) => {
+      try {
+        const body: Record<string, unknown> = { name, ...additional_fields };
+        if (description) body.description = description;
+        if (type) body.type = type;
+        if (active !== undefined) body.active = active;
+        if (manager) body.manager = manager;
+        if (email) body.email = email;
+        if (parent) body.parent = parent;
+
+        const result = await client.create("sys_user_group", body);
+        return jsonResult(result);
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_group_update",
+    "Update an existing group (sys_user_group).",
+    {
+      sys_id: z.string().describe("sys_id of the group to update"),
+      name: z.string().optional().describe("Group name"),
+      description: z.string().optional().describe("Description"),
+      type: z.string().optional().describe("Group type"),
+      active: z.boolean().optional().describe("Active status"),
+      manager: z.string().optional().describe("Manager's user sys_id"),
+      email: z.string().optional().describe("Group email"),
+      parent: z.string().optional().describe("Parent group sys_id"),
+      additional_fields: z.record(z.string(), z.unknown()).optional().describe("Additional field values"),
+    },
+    UPDATE,
+    async ({ sys_id, name, description, type, active, manager, email, parent, additional_fields }) => {
+      try {
+        const body: Record<string, unknown> = { ...additional_fields };
+        if (name) body.name = name;
+        if (description) body.description = description;
+        if (type) body.type = type;
+        if (active !== undefined) body.active = active;
+        if (manager) body.manager = manager;
+        if (email) body.email = email;
+        if (parent) body.parent = parent;
+
+        const result = await client.update("sys_user_group", sys_id, body);
+        return jsonResult(result);
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_group_member_add",
+    "Add a user to a group (sys_user_grmember).",
+    {
+      group_sys_id: z.string().describe("sys_id of the group"),
+      user_sys_id: z.string().describe("sys_id of the user to add"),
+    },
+    CREATE,
+    async ({ group_sys_id, user_sys_id }) => {
+      try {
+        const result = await client.create("sys_user_grmember", { group: group_sys_id, user: user_sys_id });
+        return jsonResult(result);
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_group_member_remove",
+    "Remove a user from a group by deleting their membership record (sys_user_grmember). Look up the membership sys_id via sn_group_members first.",
+    {
+      membership_sys_id: z.string().describe("sys_id of the sys_user_grmember record to delete (from sn_group_members)"),
+    },
+    DELETE,
+    async ({ membership_sys_id }) => {
+      try {
+        await client.delete("sys_user_grmember", membership_sys_id);
+        return jsonResult({ success: true, message: "Group membership removed" });
       } catch (error) {
         return errorResult(error);
       }

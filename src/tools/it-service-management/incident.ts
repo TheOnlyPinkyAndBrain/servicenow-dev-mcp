@@ -60,13 +60,29 @@ export function registerIncidentTools(
 
   server.tool(
     "sn_incident_get",
-    "Get full incident details including related records (child incidents, tasks, SLAs, comments)",
+    "Get full incident details including related records (child incidents, tasks, SLAs, comments). Look up by sys_id or by the human-readable incident number (e.g. 'INC0010023').",
     {
-      sys_id: z.string().describe("Incident sys_id"),
+      sys_id: z.string().optional().describe("Incident sys_id"),
+      number: z.string().optional().describe("Incident number (e.g. 'INC0010023'), used if sys_id is not provided"),
     },
     READ,
-    async ({ sys_id }) => {
+    async ({ sys_id, number }) => {
       try {
+        if (!sys_id && !number) {
+          return errorResult(new Error("Provide either sys_id or number"));
+        }
+        if (!sys_id) {
+          const lookup = await client.query("incident", {
+            sysparm_query: `number=${number}`,
+            sysparm_fields: "sys_id",
+            sysparm_limit: 1,
+          });
+          if (!lookup.records.length) {
+            return errorResult(new Error(`No incident found with number ${number}`));
+          }
+          sys_id = lookup.records[0].sys_id as string;
+        }
+
         const [incident, childIncidents, taskSlas, comments] = await Promise.all([
           client.getById("incident", sys_id),
           client.query("incident", {

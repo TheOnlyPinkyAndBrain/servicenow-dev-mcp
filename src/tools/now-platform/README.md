@@ -2,7 +2,7 @@
 
 Table/Aggregate/Attachment/Batch APIs, schema, scripting, admin, and diagnostics.
 
-**Module folder:** `src/tools/now-platform/` · **Files:** 17 · **Tools:** 85
+**Module folder:** `src/tools/now-platform/` · **Files:** 17 · **Tools:** 89
 
 Read-only tools (`both`) work in `debug` and `develop` modes; `develop` tools require `SERVICENOW_MODE=develop`.
 
@@ -13,6 +13,7 @@ Read-only tools (`both`) work in `debug` and `develop` modes; `develop` tools re
 | `sn_app_modules` | both | List application modules (navigation menu items) for an application or scope. Useful for understanding app navigation structure. |
 | `sn_app_scope_list` | both | List application scopes (sys_scope). Shows custom and store apps installed on the instance. |
 | `sn_archive_rule_list` | both | List table archive rules (sys_archive) — rules that move aged records off active tables, with their condition, schedule, and estimated volume. |
+| `sn_attachment_create` | develop | Upload a file as an attachment on a record. Content must be base64-encoded (e.g. a small text/config/report file) — not suited for large binaries given typical MCP payload limits. |
 | `sn_attachment_delete` | develop | Delete an attachment by sys_id |
 | `sn_attachment_get` | both | Get attachment metadata by sys_id (file name, content type, size, table info) |
 | `sn_attachment_list` | both | List attachments for a specific record or table. Returns metadata including file name, size, content type. |
@@ -73,6 +74,7 @@ Read-only tools (`both`) work in `debug` and `develop` modes; `develop` tools re
 | `sn_scope_switch` | develop | Switch this session's current application scope (`apps.current_app`) so subsequent Table API writes land inside that scoped app instead of global — call this *before* creating scoped-app artifacts, since `sys_scope` is set at insert time and can't be corrected afterward |
 | `sn_script_execute` | develop | Execute a server-side script on the ServiceNow instance using the native Background Scripts engine (sys.scripts.do). Has full access to GlideRecord, GlideSystem (gs), GlideAggregate, GlideDateTime, and all server-side APIs. Use gs.print() to produce output. Exactly like running a script in the Background Scripts UI. |
 | `sn_script_execute_query` | develop | Execute a GlideRecord query via Background Scripts and return results as JSON. A convenience wrapper that builds the boilerplate for you — just specify table, query, and fields. |
+| `sn_sys_property_delete` | develop | Delete a system property (sys_properties) by exact name. |
 | `sn_sys_property_get` | both | Get a system property value by exact name |
 | `sn_sys_property_list` | both | List or search system properties (sys_properties). System properties control instance-wide behavior and configuration. |
 | `sn_sys_property_set` | develop | Set a system property value. Creates the property if it doesn't exist. |

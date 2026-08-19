@@ -280,4 +280,55 @@ export function registerKnowledgeTools(
       }
     }
   );
+
+  server.tool(
+    "sn_knowledge_base_create",
+    "Create a new knowledge base (kb_knowledge_base) — the top-level container articles and categories belong to.",
+    {
+      title: z.string().describe("Knowledge base title"),
+      description: z.string().optional().describe("Description"),
+      owner: z.string().optional().describe("Owner user sys_id"),
+      active: z.boolean().optional().describe("Active status (default true)"),
+      additional_fields: z.record(z.string(), z.unknown()).optional().describe("Additional field values"),
+    },
+    CREATE,
+    async ({ title, description, owner, active, additional_fields }) => {
+      try {
+        const body: Record<string, unknown> = { title, ...additional_fields };
+        if (description) body.description = description;
+        if (owner) body.owner = owner;
+        if (active !== undefined) body.active = active;
+
+        const result = await client.create("kb_knowledge_base", body);
+        return jsonResult(result);
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_knowledge_category_create",
+    "Create a new knowledge category (kb_category) within a knowledge base, optionally nested under a parent category.",
+    {
+      label: z.string().describe("Category label"),
+      kb_knowledge_base: z.string().describe("Knowledge base sys_id this category belongs to"),
+      parent_category: z.string().optional().describe("Parent category sys_id, for a subcategory"),
+      active: z.boolean().optional().describe("Active status (default true)"),
+      additional_fields: z.record(z.string(), z.unknown()).optional().describe("Additional field values"),
+    },
+    CREATE,
+    async ({ label, kb_knowledge_base, parent_category, active, additional_fields }) => {
+      try {
+        const body: Record<string, unknown> = { label, kb_knowledge_base, ...additional_fields };
+        if (parent_category) body.parent_id = parent_category;
+        if (active !== undefined) body.active = active;
+
+        const result = await client.create("kb_category", body);
+        return jsonResult(result);
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
 }

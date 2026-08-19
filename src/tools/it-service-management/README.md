@@ -2,7 +2,7 @@
 
 Incident, problem, change, SLA, and approval management.
 
-**Module folder:** `src/tools/it-service-management/` · **Files:** 13 · **Tools:** 65
+**Module folder:** `src/tools/it-service-management/` · **Files:** 13 · **Tools:** 70
 
 Read-only tools (`both`) work in `debug` and `develop` modes; `develop` tools require `SERVICENOW_MODE=develop`.
 
@@ -20,11 +20,16 @@ Read-only tools (`both`) work in `debug` and `develop` modes; `develop` tools re
 | `sn_catalog_cart_add` | develop | Add a catalog item to the current user's cart via the Service Catalog API (POST /api/sn_sc/servicecatalog/items/{id}/add_to_cart). Use with sn_catalog_cart_get and sn_catalog_cart_submit to build a multi-item order. |
 | `sn_catalog_cart_get` | develop | Get the current user's catalog cart contents via the Service Catalog API (GET /api/sn_sc/servicecatalog/cart). Shows items staged for checkout. |
 | `sn_catalog_cart_submit` | develop | Submit the current user's cart as an order via the Service Catalog API (POST /api/sn_sc/servicecatalog/cart/submit_order). Creates the request (REQ) from all staged cart items. |
+| `sn_catalog_category_create` | develop | Create a new service catalog category (sc_category). |
 | `sn_catalog_category_list` | both | List service catalog categories (sc_category). Shows category hierarchy and structure. |
+| `sn_catalog_category_update` | develop | Update a service catalog category (sc_category), including moving it under a different parent. |
 | `sn_catalog_client_script_get` | both | Get full catalog client script details including the script source |
 | `sn_catalog_client_script_list` | both | List catalog client scripts (catalog_script_client) for a catalog item. These control form behavior in the service portal/catalog. |
 | `sn_catalog_item_get` | both | Get full catalog item details by sys_id, including its variables |
 | `sn_catalog_item_list` | both | List service catalog items (sc_cat_item). Shows item name, category, price, availability. |
+| `sn_catalog_item_update` | develop | Update a service catalog item (sc_cat_item), including moving it to a different category. To move several items at once, call this once per item sys_id. |
+| `sn_catalog_item_variable_create` | develop | Create a new variable (item_option_new) on a catalog item — a question shown on the item's order form. |
+| `sn_catalog_item_variable_update` | develop | Update a catalog item variable (item_option_new). |
 | `sn_catalog_order_now` | develop | Order a catalog item directly via the Service Catalog API (POST /api/sn_sc/servicecatalog/items/{id}/order_now). Submits the request in one call, bypassing the cart. Returns the generated request (REQ) and requested item (RITM). |
 | `sn_catalog_ui_policy_action_create` | develop | Create a new Catalog UI Policy Action (catalog_ui_policy_action) and link it to its parent Catalog UI Policy. Routes through the background-script engine rather than the plain Table API, because this instance's 'ui_policy' field isn't settable via a direct REST write (same as sn_ui_policy_action_create). |
 | `sn_catalog_ui_policy_action_delete` | develop | Delete a Catalog UI Policy Action (catalog_ui_policy_action) by sys_id |
@@ -48,7 +53,7 @@ Read-only tools (`both`) work in `debug` and `develop` modes; `develop` tools re
 | `sn_incident_alert_list` | both | List incident alerts / major-incident communications (incident_alert) — the communication records that drive stakeholder updates during a major incident, with severity, comm plan, and source incident. Requires Incident Communications / Major Incident Management plugins. |
 | `sn_incident_alert_task_list` | both | List incident communication tasks (incident_alert_task) — the individual stakeholder-communication work items under a major incident alert. |
 | `sn_incident_create` | develop | Create a new incident |
-| `sn_incident_get` | both | Get full incident details including related records (child incidents, tasks, SLAs, comments) |
+| `sn_incident_get` | both | Get full incident details including related records (child incidents, tasks, SLAs, comments). Look up by sys_id or by the human-readable incident number (e.g. 'INC0010023'). |
 | `sn_incident_list` | both | List incidents with filters for priority, state, assignment group, assigned_to, category, and time range |
 | `sn_incident_major_list` | both | List major incidents (priority 1 or 2, or those flagged as major_incident_state) |
 | `sn_incident_related_cis` | both | Get configuration items related to an incident via the task_ci relationship table |

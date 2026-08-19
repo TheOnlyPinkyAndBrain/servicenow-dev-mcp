@@ -3,7 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServiceNowClient } from "../../client.js";
 import type { Mode } from "../../types.js";
 import { errorResult, jsonResult } from "../../utils.js";
-import { DELETE, READ } from "../../annotations.js";
+import { CREATE, DELETE, READ } from "../../annotations.js";
 
 export function registerAttachmentTools(
   server: McpServer,
@@ -87,6 +87,28 @@ export function registerAttachmentTools(
   );
 
   if (mode !== "develop") return;
+
+  server.tool(
+    "sn_attachment_create",
+    "Upload a file as an attachment on a record. Content must be base64-encoded (e.g. a small text/config/report file) — not suited for large binaries given typical MCP payload limits.",
+    {
+      table_name: z.string().describe("Table of the record to attach to (e.g., 'incident', 'change_request')"),
+      table_sys_id: z.string().describe("sys_id of the record to attach to"),
+      file_name: z.string().describe("File name to store the attachment as, including extension"),
+      content_base64: z.string().describe("Base64-encoded file content"),
+      content_type: z.string().default("application/octet-stream").describe("MIME type of the file (e.g. 'application/pdf', 'text/plain')"),
+    },
+    CREATE,
+    async ({ table_name, table_sys_id, file_name, content_base64, content_type }) => {
+      try {
+        const buffer = Buffer.from(content_base64, "base64");
+        const result = await client.attachmentUpload(table_name, table_sys_id, file_name, buffer, content_type);
+        return jsonResult(result);
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
 
   server.tool(
     "sn_attachment_delete",

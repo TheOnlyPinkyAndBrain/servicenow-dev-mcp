@@ -461,6 +461,159 @@ export function registerCatalogTools(
     }
   );
 
+  // ========== Catalog admin writes ==========
+
+  server.tool(
+    "sn_catalog_category_create",
+    "Create a new service catalog category (sc_category).",
+    {
+      title: z.string().describe("Category title"),
+      description: z.string().optional().describe("Description"),
+      parent: z.string().optional().describe("Parent category sys_id"),
+      sc_catalog: z.string().optional().describe("Catalog sys_id this category belongs to"),
+      active: z.boolean().optional().describe("Active status (default true)"),
+      additional_fields: z.record(z.string(), z.unknown()).optional().describe("Additional field values"),
+    },
+    CREATE,
+    async ({ title, description, parent, sc_catalog, active, additional_fields }) => {
+      try {
+        const body: Record<string, unknown> = { title, ...additional_fields };
+        if (description) body.description = description;
+        if (parent) body.parent = parent;
+        if (sc_catalog) body.sc_catalog = sc_catalog;
+        if (active !== undefined) body.active = active;
+
+        const result = await client.create("sc_category", body);
+        return jsonResult(result);
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_catalog_category_update",
+    "Update a service catalog category (sc_category), including moving it under a different parent.",
+    {
+      sys_id: z.string().describe("sys_id of the category to update"),
+      title: z.string().optional().describe("Category title"),
+      description: z.string().optional().describe("Description"),
+      parent: z.string().optional().describe("Parent category sys_id"),
+      active: z.boolean().optional().describe("Active status"),
+      order: z.coerce.number().optional().describe("Display order"),
+      additional_fields: z.record(z.string(), z.unknown()).optional().describe("Additional field values"),
+    },
+    UPDATE,
+    async ({ sys_id, title, description, parent, active, order, additional_fields }) => {
+      try {
+        const body: Record<string, unknown> = { ...additional_fields };
+        if (title) body.title = title;
+        if (description) body.description = description;
+        if (parent) body.parent = parent;
+        if (active !== undefined) body.active = active;
+        if (order !== undefined) body.order = order;
+
+        const result = await client.update("sc_category", sys_id, body);
+        return jsonResult(result);
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_catalog_item_update",
+    "Update a service catalog item (sc_cat_item), including moving it to a different category. To move several items at once, call this once per item sys_id.",
+    {
+      sys_id: z.string().describe("sys_id of the catalog item to update"),
+      name: z.string().optional().describe("Item name"),
+      short_description: z.string().optional().describe("Short description"),
+      category: z.string().optional().describe("Category sys_id to move the item into"),
+      active: z.boolean().optional().describe("Active status"),
+      price: z.string().optional().describe("Price"),
+      additional_fields: z.record(z.string(), z.unknown()).optional().describe("Additional field values"),
+    },
+    UPDATE,
+    async ({ sys_id, name, short_description, category, active, price, additional_fields }) => {
+      try {
+        const body: Record<string, unknown> = { ...additional_fields };
+        if (name) body.name = name;
+        if (short_description) body.short_description = short_description;
+        if (category) body.category = category;
+        if (active !== undefined) body.active = active;
+        if (price) body.price = price;
+
+        const result = await client.update("sc_cat_item", sys_id, body);
+        return jsonResult(result);
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_catalog_item_variable_create",
+    "Create a new variable (item_option_new) on a catalog item — a question shown on the item's order form.",
+    {
+      cat_item: z.string().describe("sys_id of the catalog item (sc_cat_item) this variable belongs to"),
+      name: z.string().describe("Internal variable name"),
+      question_text: z.string().describe("Question text shown to the user"),
+      type: z.string().describe("Variable type code (e.g. '6' = single line text, '5' = multi-line, '8' = select box, '1' = yes/no)"),
+      mandatory: z.boolean().optional().describe("Whether the variable is required"),
+      default_value: z.string().optional().describe("Default value"),
+      order: z.coerce.number().optional().describe("Display order"),
+      active: z.boolean().optional().describe("Active status (default true)"),
+      additional_fields: z.record(z.string(), z.unknown()).optional().describe("Additional field values"),
+    },
+    CREATE,
+    async ({ cat_item, name, question_text, type, mandatory, default_value, order, active, additional_fields }) => {
+      try {
+        const body: Record<string, unknown> = { cat_item, name, question_text, type, ...additional_fields };
+        if (mandatory !== undefined) body.mandatory = mandatory;
+        if (default_value) body.default_value = default_value;
+        if (order !== undefined) body.order = order;
+        if (active !== undefined) body.active = active;
+
+        const result = await client.create("item_option_new", body);
+        return jsonResult(result);
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_catalog_item_variable_update",
+    "Update a catalog item variable (item_option_new).",
+    {
+      sys_id: z.string().describe("sys_id of the variable to update"),
+      question_text: z.string().optional().describe("Question text shown to the user"),
+      type: z.string().optional().describe("Variable type code"),
+      mandatory: z.boolean().optional().describe("Whether the variable is required"),
+      default_value: z.string().optional().describe("Default value"),
+      order: z.coerce.number().optional().describe("Display order"),
+      active: z.boolean().optional().describe("Active status"),
+      additional_fields: z.record(z.string(), z.unknown()).optional().describe("Additional field values"),
+    },
+    UPDATE,
+    async ({ sys_id, question_text, type, mandatory, default_value, order, active, additional_fields }) => {
+      try {
+        const body: Record<string, unknown> = { ...additional_fields };
+        if (question_text) body.question_text = question_text;
+        if (type) body.type = type;
+        if (mandatory !== undefined) body.mandatory = mandatory;
+        if (default_value) body.default_value = default_value;
+        if (order !== undefined) body.order = order;
+        if (active !== undefined) body.active = active;
+
+        const result = await client.update("item_option_new", sys_id, body);
+        return jsonResult(result);
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
   // ========== Catalog UI Policy Actions (develop only) ==========
 
   // sn_catalog_ui_policy_action_create — Develop only. Routes through the

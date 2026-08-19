@@ -3,7 +3,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServiceNowClient } from "../../client.js";
 import type { Mode } from "../../types.js";
 import { errorResult, jsonResult } from "../../utils.js";
-import { CREATE, READ, UPDATE } from "../../annotations.js";
+import { CREATE, DELETE, READ, UPDATE } from "../../annotations.js";
 
 export function registerWorkflowTools(
   server: McpServer,
@@ -219,6 +219,23 @@ export function registerWorkflowTools(
       try {
         const record = await client.update("wf_workflow", sys_id, data);
         return jsonResult(record);
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_workflow_delete",
+    "Delete a legacy workflow (wf_workflow) by sys_id. This deletes the workflow container itself, not necessarily its activities/versions — check for dependent records first if the workflow has been published.",
+    {
+      sys_id: z.string().describe("The sys_id of the workflow to delete"),
+    },
+    DELETE,
+    async ({ sys_id }) => {
+      try {
+        await client.delete("wf_workflow", sys_id);
+        return jsonResult({ success: true, message: "Workflow deleted" });
       } catch (error) {
         return errorResult(error);
       }

@@ -3,8 +3,8 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { ServiceNowClient } from "../../client.js";
 import { ServiceNowApiError } from "../../client.js";
 import type { Mode } from "../../types.js";
-import { CREATE, READ, UPDATE } from "../../annotations.js";
-import { jsonResult } from "../../utils.js";
+import { ACTION, CREATE, READ, UPDATE } from "../../annotations.js";
+import { jsonResult, parseBackgroundScriptJsonOutput } from "../../utils.js";
 
 function errorResult(error: unknown) {
   const message =
@@ -210,6 +210,56 @@ export function registerFlowTools(
         return {
           content: [{ type: "text", text: JSON.stringify(record, null, 2) }],
         };
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  // sn_flow_run — Develop only. There is no plain REST endpoint to invoke an
+  // arbitrary Flow Designer flow by sys_id (unlike ATF's /api/now/v1/atf/test/run) —
+  // Flow Designer's only public execution surface is the server-side
+  // sn_fd.FlowAPI script API, or a per-flow Inbound REST trigger someone has
+  // to build into the flow itself. So this routes through the background-script
+  // engine, same as the other tools in this server that need capabilities the
+  // Table/REST API doesn't expose.
+  server.tool(
+    "sn_flow_run",
+    "Run a Flow Designer flow or subflow synchronously by sys_id or scoped name (e.g. 'global.my_flow'), and return its outputs. Executes via the server-side Flow API (sn_fd.FlowAPI) since Flow Designer has no generic REST endpoint to invoke an arbitrary flow — only flows built with their own Inbound REST trigger get a dedicated webhook URL.",
+    {
+      flow_id: z.string().describe("sys_id or scoped name (e.g. 'global.my_flow') of the flow or subflow to run"),
+      is_subflow: z.boolean().optional().describe("True if flow_id refers to a subflow rather than a top-level flow (default false)"),
+      inputs: z.record(z.string(), z.unknown()).optional().describe("Input values keyed by the flow's input variable names"),
+    },
+    ACTION,
+    async ({ flow_id, is_subflow, inputs }) => {
+      const script = [
+        `var runner = sn_fd.FlowAPI.getRunner();`,
+        `runner = ${JSON.stringify(!!is_subflow)} ? runner.subflow(${JSON.stringify(flow_id)}) : runner.flow(${JSON.stringify(flow_id)});`,
+        `try {`,
+        `  var result = runner.inForeground().withInputs(${JSON.stringify(inputs ?? {})}).run();`,
+        `  gs.print(JSON.stringify({`,
+        `    success: true,`,
+        `    contextId: result.getContextId(),`,
+        `    flowObjectType: result.getFlowObjectType(),`,
+        `    flowObjectName: result.getFlowObjectName(),`,
+        `    outputs: result.getOutputs()`,
+        `  }));`,
+        `} catch (e) {`,
+        `  gs.print(JSON.stringify({ success: false, error: (e && e.message) ? e.message : String(e) }));`,
+        `}`,
+      ].join("\n");
+
+      try {
+        const result = await client.executeBackgroundScript(script);
+        if (!result.success) {
+          return errorResult(new Error(result.error ?? "Script execution failed"));
+        }
+        const parsed = parseBackgroundScriptJsonOutput(result.output) as { success: boolean; error?: string };
+        if (!parsed.success) {
+          return errorResult(new Error(parsed.error ?? "Flow run failed"));
+        }
+        return jsonResult(parsed);
       } catch (error) {
         return errorResult(error);
       }

@@ -1,8 +1,8 @@
 # Platform User Interface
 
-UI policies/actions/pages and Service Portal.
+UI policies/actions/pages, Service Portal, and UI Builder (UX Workspaces).
 
-**Module folder:** `src/tools/platform-user-interface/` · **Files:** 3 · **Tools:** 26
+**Module folder:** `src/tools/platform-user-interface/` · **Files:** 4 · **Tools:** 29
 
 Read-only tools (`both`) work in `debug` and `develop` modes; `develop` tools require `SERVICENOW_MODE=develop`.
 
@@ -34,6 +34,9 @@ Read-only tools (`both`) work in `debug` and `develop` modes; `develop` tools re
 | `sn_ui_script_get` | both | Get full UI Script details including source code |
 | `sn_ui_script_list` | both | List UI Scripts (sys_ui_script) — global client-side JavaScript libraries loaded on pages |
 | `sn_ui_view_list` | both | List form/list views (sys_ui_view) — named alternate layouts (e.g. 'Default view', 'ESS', 'ess') that tables can present. |
+| `sn_ux_experience_list` | both | List UI Builder experiences/workspaces (sys_ux_experience) — the modern successor to Service Portal for building custom UIs (used heavily for CSM/HRSD workspaces and Employee Center). |
+| `sn_ux_page_list` | both | List UI Builder pages (sys_ux_page) — the individual pages/routes that make up an experience. |
+| `sn_ux_page_registry_list` | both | List UX page registry entries (sys_ux_page_registry) — the routes/URLs that expose a UI Builder page or macroponent for navigation. |
 
 ---
 

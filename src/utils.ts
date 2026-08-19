@@ -48,7 +48,7 @@ async function runGlideRecordWrite(
     );
   }
   try {
-    const parsed = parseGlideRecordWriteOutput(result.output) as { error?: boolean; message?: string };
+    const parsed = parseBackgroundScriptJsonOutput(result.output) as { error?: boolean; message?: string };
     if (parsed.error) {
       return errorResult(new Error(parsed.message ?? "Write failed"));
     }
@@ -62,7 +62,7 @@ async function runGlideRecordWrite(
 // of our gs.print() JSON (e.g. a form-cache-flush notice triggered by the
 // write itself), so a plain JSON.parse() on the full string can fail even
 // though the write succeeded. Fall back to the last brace-delimited block.
-function parseGlideRecordWriteOutput(output: string): unknown {
+export function parseBackgroundScriptJsonOutput(output: string): unknown {
   const trimmed = output.trim();
   try {
     return JSON.parse(trimmed);

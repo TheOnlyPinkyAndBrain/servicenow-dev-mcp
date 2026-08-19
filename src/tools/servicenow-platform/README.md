@@ -2,7 +2,7 @@
 
 CMDB (config items, IRE) and Knowledge Management.
 
-**Module folder:** `src/tools/servicenow-platform/` · **Files:** 4 · **Tools:** 26
+**Module folder:** `src/tools/servicenow-platform/` · **Files:** 4 · **Tools:** 28
 
 Read-only tools (`both`) work in `debug` and `develop` modes; `develop` tools require `SERVICENOW_MODE=develop`.
 
@@ -27,8 +27,10 @@ Read-only tools (`both`) work in `debug` and `develop` modes; `develop` tools re
 | `sn_knowledge_article_list` | both | List knowledge articles with filters using the Table API for advanced queries |
 | `sn_knowledge_article_update` | develop | Update a knowledge article |
 | `sn_knowledge_article_versions` | both | List version history for a knowledge article (kb_version). Shows each captured version of an article as it was published/updated over time. |
+| `sn_knowledge_base_create` | develop | Create a new knowledge base (kb_knowledge_base) — the top-level container articles and categories belong to. |
 | `sn_knowledge_base_list` | both | List knowledge bases |
 | `sn_knowledge_block_list` | both | List Knowledge Blocks (kb_knowledge_block) — reusable content blocks embedded across articles. Requires the Knowledge Blocks plugin (com.snc.knowledge_blocks). |
+| `sn_knowledge_category_create` | develop | Create a new knowledge category (kb_category) within a knowledge base, optionally nested under a parent category. |
 | `sn_knowledge_category_list` | both | List knowledge categories for a knowledge base |
 | `sn_knowledge_feedback` | both | List feedback for a knowledge article |
 | `sn_knowledge_search` | both | Search knowledge base articles using the Knowledge API (sn_km_api). Returns matching articles with relevance ranking. |

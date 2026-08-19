@@ -13,6 +13,25 @@ export const ELEVATION_FAILED_MARKER = "__ELEVATION_FAILED__";
 // requires those to start with a letter).
 const ADD_NEW_INSTANCE = "__add_new_instance__";
 
+// 429 handling: ServiceNow's REST rate limiter sends Retry-After (seconds or
+// an HTTP-date) when present; otherwise we fall back to exponential backoff.
+const MAX_RATE_LIMIT_RETRIES = 3;
+const RATE_LIMIT_BASE_DELAY_MS = 500;
+const RATE_LIMIT_MAX_DELAY_MS = 8000;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function parseRetryAfterMs(header: string | null): number | null {
+  if (!header) return null;
+  const seconds = Number(header);
+  if (!Number.isNaN(seconds)) return Math.max(0, seconds * 1000);
+  const dateMs = Date.parse(header);
+  if (!Number.isNaN(dateMs)) return Math.max(0, dateMs - Date.now());
+  return null;
+}
+
 export class ServiceNowApiError extends Error {
   constructor(
     public statusCode: number,
@@ -218,7 +237,8 @@ export class ServiceNowClient {
     method: string,
     url: string,
     body?: Record<string, unknown>,
-    isRetry = false
+    isRetry = false,
+    rateLimitAttempt = 0
   ): Promise<{ data: T; totalCount?: number }> {
     const headers: Record<string, string> = {
       Authorization: await this.authProvider.getAuthHeader(),
@@ -236,7 +256,15 @@ export class ServiceNowClient {
       // Token may have expired between our cached-expiry check and the
       // request landing — refresh once and retry before giving up.
       await this.authProvider.onUnauthorized();
-      return this.request<T>(method, url, body, true);
+      return this.request<T>(method, url, body, true, rateLimitAttempt);
+    }
+
+    if (response.status === 429 && rateLimitAttempt < MAX_RATE_LIMIT_RETRIES) {
+      const delayMs =
+        parseRetryAfterMs(response.headers.get("Retry-After")) ??
+        Math.min(RATE_LIMIT_BASE_DELAY_MS * 2 ** rateLimitAttempt, RATE_LIMIT_MAX_DELAY_MS);
+      await sleep(delayMs);
+      return this.request<T>(method, url, body, isRetry, rateLimitAttempt + 1);
     }
 
     if (!response.ok) {
@@ -539,6 +567,44 @@ export class ServiceNowClient {
     await this.ensureActiveInstance();
     const url = `${this.instanceUrl}/api/now/attachment/${encodeURIComponent(sysId)}`;
     await this.request("DELETE", url);
+  }
+
+  // Binary upload -- the generic request() helper always JSON-encodes the
+  // body, so this bypasses it and posts the raw file bytes with the
+  // caller-supplied content type, per ServiceNow's /api/now/attachment/file
+  // contract (query params carry the metadata, the body is just the file).
+  async attachmentUpload(
+    tableName: string,
+    tableSysId: string,
+    fileName: string,
+    content: Buffer,
+    contentType: string
+  ): Promise<Record<string, unknown>> {
+    await this.ensureActiveInstance();
+    const searchParams = new URLSearchParams({
+      table_name: tableName,
+      table_sys_id: tableSysId,
+      file_name: fileName,
+    });
+    const url = `${this.instanceUrl}/api/now/attachment/file?${searchParams.toString()}`;
+    const headers: Record<string, string> = {
+      Authorization: await this.authProvider.getAuthHeader(),
+      Accept: "application/json",
+      "Content-Type": contentType,
+    };
+    const response = await fetch(url, { method: "POST", headers, body: new Uint8Array(content) });
+    if (!response.ok) {
+      let detail: string;
+      try {
+        const errBody = (await response.json()) as { error?: { message?: string; detail?: string } };
+        detail = errBody?.error?.message || errBody?.error?.detail || response.statusText;
+      } catch {
+        detail = response.statusText;
+      }
+      throw new ServiceNowApiError(response.status, detail, "POST", "/api/now/attachment/file");
+    }
+    const data = (await response.json()) as { result: Record<string, unknown> };
+    return data.result;
   }
 
   async batchRequest(

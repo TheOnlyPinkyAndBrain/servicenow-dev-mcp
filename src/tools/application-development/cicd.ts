@@ -240,6 +240,27 @@ export function registerCicdTools(
   );
 
   server.tool(
+    "sn_atf_test_run",
+    "Execute a single ATF test (as opposed to sn_cicd_run_test_suite, which only runs whole suites) via the native ATF REST API. Requires the Automated Test Framework plugin (com.glide.automated-test-framework) and the atf_test_admin role. Execution is asynchronous — poll sn_atf_result_list with the returned result sys_id if the run doesn't resolve synchronously.",
+    {
+      test_sys_id: z.string().describe("sys_id of the ATF test to run (from sn_atf_test_list)"),
+      browser_name: z.enum(["any", "chrome", "firefox", "edge", "safari"]).default("any").describe("Browser to run UI-step tests in"),
+    },
+    ACTION,
+    async ({ test_sys_id, browser_name }) => {
+      try {
+        const result = await client.restApi("POST", "/api/now/v1/atf/test/run", {
+          testId: test_sys_id,
+          browserName: browser_name,
+        });
+        return jsonResult(result);
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
     "sn_cicd_activate_plugin",
     "Activate a plugin via the CI/CD API",
     {

@@ -26,6 +26,7 @@ import { registerAclTools } from "./platform-security/acl.js";
 import { registerUiTools } from "./platform-user-interface/ui.js";
 import { registerUiConfigTools } from "./platform-user-interface/ui-policy.js";
 import { registerServicePortalTools } from "./platform-user-interface/service-portal.js";
+import { registerUiBuilderTools } from "./platform-user-interface/ui-builder.js";
 
 // ITSM tools
 import { registerIncidentTools } from "./it-service-management/incident.js";
@@ -47,6 +48,8 @@ import { registerScriptTools } from "./application-development/script.js";
 import { registerFlowTools } from "./application-development/flow.js";
 import { registerWorkflowTools } from "./application-development/workflow.js";
 import { registerCicdTools } from "./application-development/cicd.js";
+import { registerAgileTools } from "./application-development/agile.js";
+import { registerDecisionTableTools } from "./application-development/decision-table.js";
 
 // ServiceNow Platform (CMDB, Knowledge, Interaction, Skills)
 import { registerKnowledgeTools } from "./servicenow-platform/knowledge.js";
@@ -115,6 +118,7 @@ export const registrars: Registrar[] = [
   registerUiTools,
   registerUiConfigTools,
   registerServicePortalTools,
+  registerUiBuilderTools,
 
   // ITSM
   registerIncidentTools,
@@ -136,6 +140,8 @@ export const registrars: Registrar[] = [
   registerFlowTools,
   registerWorkflowTools,
   registerCicdTools,
+  registerAgileTools,
+  registerDecisionTableTools,
 
   // ServiceNow Platform (CMDB, Knowledge, Interaction, Skills)
   registerKnowledgeTools,
