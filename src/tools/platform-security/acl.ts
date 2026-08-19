@@ -15,7 +15,29 @@ export function registerAclTools(
     "List ACLs (sys_security_acl), optionally filtered by table, operation, or type",
     {
       table: z.string().optional().describe("Filter ACLs by name (contains match, often the table)"),
-      operation: z.enum(["read", "write", "create", "delete"]).optional().describe("Filter by operation type"),
+      operation: z
+        .enum([
+          "read",
+          "write",
+          "create",
+          "delete",
+          "execute",
+          "query_match",
+          "query_range",
+          "report_view",
+          "list_edit",
+          "add_to_list",
+          "personalize_choices",
+          "conditional_table_query_range",
+          "edit_task_relations",
+          "edit_ci_relations",
+          "save_as_template",
+          "data_fabric",
+          "report_on",
+          "invoke_from_ai",
+        ])
+        .optional()
+        .describe("Filter by operation type (sys_security_operation)"),
       type: z.string().optional().describe("Filter by ACL type (e.g. 'record')"),
       active: z.boolean().optional().describe("Filter by active status"),
       limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
@@ -77,6 +99,88 @@ export function registerAclTools(
           sysparm_display_value: "true",
         });
         return jsonResult({ aclSysId: acl_sys_id, count: result.records.length, roles: result.records });
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_security_attribute_list",
+    "List Security Attributes (sys_security_attribute) — reusable named conditions that ACLs can reference via their security_attribute field instead of inlining a condition/script",
+    {
+      name: z.string().optional().describe("Filter by name (contains match)"),
+      type: z.string().optional().describe("Filter by attribute type (e.g. 'boolean', 'compound')"),
+      is_system: z.boolean().optional().describe("Filter by system-defined status"),
+      active: z.boolean().optional().describe("Filter by active status"),
+      limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
+    },
+    READ,
+    async ({ name, type, is_system, active, limit, offset }) => {
+      try {
+        const queryParts: string[] = [];
+        if (name) queryParts.push(`nameLIKE${name}`);
+        if (type) queryParts.push(`type=${type}`);
+        if (is_system !== undefined) queryParts.push(`is_system=${is_system}`);
+        if (active !== undefined) queryParts.push(`active=${active}`);
+        queryParts.push("ORDERBYname");
+        const result = await client.query("sys_security_attribute", {
+          sysparm_query: queryParts.join("^"),
+          sysparm_fields:
+            "sys_id,name,label,type,description,condition,script,is_dynamic,is_localized,is_system,active,lookup_table,lookup_table_column,sys_updated_on",
+          sysparm_limit: limit,
+          sysparm_offset: offset,
+        });
+        return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_security_attribute_get",
+    "Get full Security Attribute details by sys_id, including condition and script",
+    {
+      sys_id: z.string().describe("The sys_id of the security attribute"),
+    },
+    READ,
+    async ({ sys_id }) => {
+      try {
+        const record = await client.getById("sys_security_attribute", sys_id);
+        return jsonResult(record);
+      } catch (error) {
+        return errorResult(error);
+      }
+    }
+  );
+
+  server.tool(
+    "sn_security_attribute_audit_list",
+    "List Security Attribute audit records (v_security_attribute_audit) — tracks where/which records reference a security attribute, most recent first",
+    {
+      attribute_sys_id: z.string().optional().describe("Filter by the sys_id of the security attribute (sys_security_attribute)"),
+      table_name: z.string().optional().describe("Filter by table name (contains match)"),
+      limit: z.coerce.number().min(1).max(100).optional().describe("Max records (default 20)"),
+      offset: z.coerce.number().min(0).optional().describe("Offset for pagination"),
+    },
+    READ,
+    async ({ attribute_sys_id, table_name, limit, offset }) => {
+      try {
+        const queryParts: string[] = [];
+        if (attribute_sys_id) queryParts.push(`security_attribute=${attribute_sys_id}`);
+        if (table_name) queryParts.push(`table_nameLIKE${table_name}`);
+        queryParts.push("ORDERBYDESCsys_updated_on");
+        const result = await client.query("v_security_attribute_audit", {
+          sysparm_query: queryParts.join("^"),
+          sysparm_fields:
+            "sys_id,security_attribute,referenced_by,table_name,scope,sys_created_by,sys_created_on,sys_updated_by,sys_updated_on,sys_mod_count",
+          sysparm_limit: limit,
+          sysparm_offset: offset,
+          sysparm_display_value: "true",
+        });
+        return jsonResult({ totalCount: result.totalCount, count: result.records.length, records: result.records });
       } catch (error) {
         return errorResult(error);
       }

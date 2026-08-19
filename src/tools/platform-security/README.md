@@ -2,9 +2,11 @@
 
 ACLs, roles, and access control.
 
-**Module folder:** `src/tools/platform-security/` · **Files:** 2 · **Tools:** 16
+**Module folder:** `src/tools/platform-security/` · **Files:** 2 · **Tools:** 19
 
 Read-only tools (`both`) work in `debug` and `develop` modes; `develop` tools require `SERVICENOW_MODE=develop`.
+
+`sn_acl_list`'s `operation` filter accepts 18 values (widened from the original 4: `read`/`write`/`create`/`delete`, now also `execute`, `query_match`, `query_range`, `report_view`, `list_edit`, `add_to_list`, `personalize_choices`, `conditional_table_query_range`, `edit_task_relations`, `edit_ci_relations`, `save_as_template`, `data_fabric`, `report_on`, `invoke_from_ai`).
 
 | Tool | Mode | Description |
 |------|------|-------------|
@@ -20,6 +22,9 @@ Read-only tools (`both`) work in `debug` and `develop` modes; `develop` tools re
 | `sn_oauth_entity_list` | both | List OAuth application registries (oauth_entity) — OAuth clients/providers configured on the instance. Secrets are not returned. |
 | `sn_role_contains` | both | List roles contained within a role (sys_user_role_contains). Shows role inheritance hierarchy. |
 | `sn_role_list` | both | List roles (sys_user_role). Shows role name, description, and elevated privilege status. |
+| `sn_security_attribute_audit_list` | both | List Security Attribute audit records (v_security_attribute_audit) — tracks where/which records reference a security attribute, most recent first |
+| `sn_security_attribute_get` | both | Get full Security Attribute details by sys_id, including condition and script |
+| `sn_security_attribute_list` | both | List Security Attributes (sys_security_attribute) — reusable named conditions that ACLs can reference via their security_attribute field instead of inlining a condition/script |
 | `sn_user_criteria_list` | both | List user criteria (user_criteria) — reusable access-control definitions (by role/group/user/company/dept/location) used to gate catalog items and knowledge. |
 | `sn_user_groups` | both | List groups a user belongs to (sys_user_grmember). Useful for debugging assignment and access. |
 | `sn_user_list` | both | List ServiceNow users (sys_user). Search by name, email, role, or group membership. |
